@@ -1,0 +1,77 @@
+{
+  "vehicle": "Iron Horse Vocal Engine (Rocket League SFX_Motor_Train_Voice)",
+  "engine_type": "Wwise Procedural Stroke Rhythm Engine",
+  "sample_rate": 48000,
+  "stroke_groups": {
+    "group_a": [
+      "strokes_a/stroke_a_01.wav",
+      "strokes_a/stroke_a_02.wav",
+      "strokes_a/stroke_a_03.wav",
+      "strokes_a/stroke_a_04.wav",
+      "strokes_a/stroke_a_05.wav",
+      "strokes_a/stroke_a_06.wav",
+      "strokes_a/stroke_a_07.wav",
+      "strokes_a/stroke_a_08.wav",
+      "strokes_a/stroke_a_09.wav",
+      "strokes_a/stroke_a_10.wav",
+      "strokes_a/stroke_a_11.wav"
+    ],
+    "group_b": [
+      "strokes_b/stroke_b_01.wav",
+      "strokes_b/stroke_b_02.wav",
+      "strokes_b/stroke_b_03.wav",
+      "strokes_b/stroke_b_04.wav",
+      "strokes_b/stroke_b_05.wav",
+      "strokes_b/stroke_b_06.wav",
+      "strokes_b/stroke_b_07.wav",
+      "strokes_b/stroke_b_08.wav",
+      "strokes_b/stroke_b_09.wav",
+      "strokes_b/stroke_b_10.wav",
+      "strokes_b/stroke_b_11.wav"
+    ],
+    "group_c": [
+      "strokes_c/stroke_c_01.wav",
+      "strokes_c/stroke_c_02.wav",
+      "strokes_c/stroke_c_03.wav",
+      "strokes_c/stroke_c_04.wav",
+      "strokes_c/stroke_c_05.wav",
+      "strokes_c/stroke_c_06.wav",
+      "strokes_c/stroke_c_07.wav",
+      "strokes_c/stroke_c_08.wav",
+      "strokes_c/stroke_c_09.wav",
+      "strokes_c/stroke_c_10.wav",
+      "strokes_c/stroke_c_11.wav"
+    ]
+  },
+  "steam_vents": [
+    "steam_vents/vent_01.wav",
+    "steam_vents/vent_02.wav",
+    "steam_vents/vent_03.wav",
+    "steam_vents/vent_04.wav",
+    "steam_vents/vent_05.wav",
+    "steam_vents/vent_06.wav",
+    "steam_vents/vent_07.wav",
+    "steam_vents/vent_08.wav"
+  ],
+  "whistles": [
+    "whistles/whistle_01.wav",
+    "whistles/whistle_02.wav",
+    "whistles/whistle_03.wav",
+    "whistles/whistle_04.wav",
+    "whistles/whistle_05.wav"
+  ],
+  "backfire_pops": [
+    "backfire_pops/pop_01.wav",
+    "backfire_pops/pop_02.wav",
+    "backfire_pops/pop_03.wav",
+    "backfire_pops/pop_04.wav",
+    "backfire_pops/pop_05.wav"
+  ],
+  "speed_loops": [
+    "loops/speed_loop_01.wav",
+    "loops/speed_loop_02.wav",
+    "loops/speed_loop_03.wav",
+    "loops/speed_loop_04.wav",
+    "loops/speed_loop_05.wav"
+  ]
+}

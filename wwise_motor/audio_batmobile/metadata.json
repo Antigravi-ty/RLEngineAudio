@@ -1,0 +1,28 @@
+{
+  "vehicle": "Batmobile DarkCar (Rocket League SFX_Motor_DarkCar)",
+  "engine_type": "Wwise Multi-Layer Jet Blend Container",
+  "sample_rate": 48000,
+  "tracks": {
+    "ignition": "ignition_launch.wav",
+    "on_load_low": {
+      "file": "loop_low_mid.wav",
+      "rpm_range": [
+        900,
+        3200
+      ],
+      "peak_rpm": 1800
+    },
+    "cruise_high": {
+      "file": "loop_cruise_high.wav",
+      "rpm_range": [
+        2200,
+        6000
+      ],
+      "peak_rpm": 4500
+    },
+    "off_load_decel": {
+      "file": "decel_exhaust.wav",
+      "trigger": "throttle_off"
+    }
+  }
+}
