@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rocket League · Batmobile 蝙蝠车引擎仿真控制台 (Wwise 多轨混合容器)</title>
+  <style>
+    :root {
+      --bg-color: #0b0e14;
+      --card-bg: #151b23;
+      --card-inner: #0d1117;
+      --accent-cyan: #00e5ff;
+      --accent-green: #00ff88;
+      --accent-orange: #ff9100;
+      --accent-red: #ff1744;
+      --accent-purple: #b388ff;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --border-color: #30363d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #182030 0%, var(--bg-color) 75%);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 18px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      background: linear-gradient(90deg, #ff9100, #ff1744, #b388ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 13.5px;
+    }
+
+    .nav-bar {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 1080px;
+    }
+
+    .nav-btn {
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--accent-orange);
+      color: #fff;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 10px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: rgba(255, 145, 0, 0.15);
+      color: var(--accent-orange);
+      border: 1px solid var(--accent-orange);
+    }
+
+    .dashboard-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gauge-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .gauge-needle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 85px;
+      background: linear-gradient(to top, #ff1744, #ff9100);
+      transform-origin: 50% 90%;
+      transform: rotate(-120deg);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 23, 68, 0.6);
+      transition: transform 0.06s linear;
+      pointer-events: none;
+    }
+
+    .gauge-center-cap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      margin-top: -9px;
+      margin-left: -9px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0,0,0,0.8);
+    }
+
+    .rpm-display {
+      text-align: center;
+      margin-top: -24px;
+    }
+
+    .rpm-num {
+      font-size: 38px;
+      font-weight: 900;
+      font-family: monospace;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .rpm-unit {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: var(--card-inner);
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      font-family: monospace;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .pedal-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pedal-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pedal-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: #21262d;
+      outline: none;
+    }
+
+    .pedal-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-orange);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(255, 145, 0, 0.6);
+    }
+
+    .pedal-slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .action-btn {
+      padding: 12px 18px;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      border-color: var(--accent-orange);
+    }
+
+    .action-btn.active {
+      background: rgba(255, 145, 0, 0.15);
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+      box-shadow: 0 0 12px rgba(255, 145, 0, 0.3);
+    }
+
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .track-item {
+      background: var(--card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .track-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .track-meter {
+      height: 8px;
+      background: #21262d;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .track-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #ff9100, #ff1744);
+      transition: width 0.05s linear;
+    }
+
+    .rtpc-info-box {
+      background: var(--card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    .rtpc-info-box b {
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Rocket League · Batmobile DarkCar 引擎仿真控制台</h1>
+    <p>Audiokinetic Wwise 原生 CAkLayerCntr 双层混合容器 · RTPC 踏板与车速交叉淡化 · 起步点火 Launch Intro</p>
+  </header>
+
+  <div class="nav-bar">
+    <a href="../index.html" class="nav-btn">← 返回双架构主页</a>
+    <a href="train_voice.html" class="nav-btn">🚂 切换至 Iron Horse 火车控制台 →</a>
+    <label class="nav-btn" style="cursor:pointer;">
+      📁 选入 audio_batmobile 文件夹
+      <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+    </label>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- 左侧：仪表与动力控制 -->
+    <div class="panel">
+      <h2>
+        蝙蝠车座舱仪表
+        <span class="badge" id="engineStatusBadge">STANDBY</span>
+      </h2>
+
+      <div class="dashboard-center">
+        <div class="gauge-wrapper">
+          <svg class="gauge-svg" viewBox="0 0 240 240">
+            <path d="M 36 174 A 92 92 0 1 1 204 174" fill="none" stroke="#21262d" stroke-width="12" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M 36 174 A 92 92 0 1 1 204 174" fill="none" stroke="#ff1744" stroke-width="12" stroke-linecap="round" stroke-dasharray="450" stroke-dashoffset="450"/>
+          </svg>
+          <div class="gauge-needle" id="gaugeNeedle"></div>
+          <div class="gauge-center-cap"></div>
+        </div>
+
+        <div class="rpm-display">
+          <div class="rpm-num" id="rpmText">900</div>
+          <div class="rpm-unit">ENGINE RPM (转速)</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-val" id="speedText">0 km/h</div>
+          <div class="stat-lbl">行进车速</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="gearText">1 挡</div>
+          <div class="stat-lbl">当前挡位</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="layerText">Layer 1 滑行</div>
+          <div class="stat-lbl">Wwise 容器层</div>
+        </div>
+      </div>
+
+      <button class="action-btn" id="startBtn" onclick="toggleEngine()">
+        <span id="startBtnIcon">▶</span>
+        <span id="startBtnText">启动蝙蝠车引擎</span>
+      </button>
+
+      <div class="pedal-controls">
+        <div class="pedal-slider-wrap">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight:600;">
+            <span>单踏板输入 (油门 / 刹车)</span>
+            <span id="pedalStatusText" style="color:var(--text-muted);">0% (空挡)</span>
+          </div>
+          <input type="range" class="pedal-slider" id="pedalSlider" min="-100" max="100" value="0">
+          <div class="pedal-slider-labels">
+            <span>-100% 刹车制动</span>
+            <span>0% 怠速滑行</span>
+            <span>+100% 喷气加速</span>
+          </div>
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;">
+          💡 支持键盘快捷键：按住 <b>W 键</b>地板油加速；按住 <b>S 键</b>刹车；松开恢复怠速滑行。
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：Wwise 混合容器轨实时电平与机制解析 -->
+    <div class="panel">
+      <h2>
+        Wwise CAkLayerCntr 容器多轨混合器
+        <span class="badge" style="border-color:#b388ff; color:#b388ff;">4 独立音轨</span>
+      </h2>
+
+      <div class="track-list">
+        <div class="track-item">
+          <div class="track-header">
+            <span>🔹 低速基础循环轨 (loop_low_mid.wav)</span>
+            <span id="track_low_val" style="color:var(--accent-cyan); font-family:monospace;">0%</span>
+          </div>
+          <div class="track-meter">
+            <div class="track-fill" id="track_low_fill" style="background:#00e5ff;"></div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+            WEM 457205150 · 怠速底噪与低速巡航 (双层共享轨)
+          </div>
+        </div>
+
+        <div class="track-item">
+          <div class="track-header">
+            <span>🔥 高速喷气加速轨 (loop_cruise_high.wav)</span>
+            <span id="track_high_val" style="color:var(--accent-orange); font-family:monospace;">0%</span>
+          </div>
+          <div class="track-meter">
+            <div class="track-fill" id="track_high_fill" style="background:#ff9100;"></div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+            WEM 199011963 · Layer 0 专属 · 踩油门 (Throttle > 0.5) 且车速提高时全开
+          </div>
+        </div>
+
+        <div class="track-item">
+          <div class="track-header">
+            <span>💨 减速气流排气轨 (decel_exhaust.wav)</span>
+            <span id="track_decel_val" style="color:var(--accent-red); font-family:monospace;">0%</span>
+          </div>
+          <div class="track-meter">
+            <div class="track-fill" id="track_decel_fill" style="background:#ff1744;"></div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+            WEM 639862118 · Layer 1 专属 · 松油门 (Throttle < 0.5) 高速滑行排气呼啸
+          </div>
+        </div>
+
+        <div class="track-item">
+          <div class="track-header">
+            <span>⚡ 起步喷气点火 (ignition_launch.wav)</span>
+            <span id="track_ign_val" style="color:#b388ff; font-family:monospace;">待机</span>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
+            WEM 928841165 · Event 3824029166 触发 · 静止起步踩油门瞬间触发单次
+          </div>
+        </div>
+      </div>
+
+      <h2>Wwise 容器底层控制逻辑</h2>
+      <div class="rtpc-info-box">
+        • <b>双层容器结构</b>：Wwise `CAkLayerCntr` (ID: 36820665) 包含 Layer 0 (给油态) 与 Layer 1 (松油门滑行态)。<br>
+        • <b>RTPC 986115703 (踏板负荷)</b>：油门在 0.485 ~ 0.515 区间进行 S 型曲线层间切换。<br>
+        • <b>RTPC 1176766538 (车速/转速)</b>：在低速到高速（归一化 0.029 ~ 0.20）区间平滑淡出低速轨、淡入高速轨。<br>
+        • <b>起步事件</b>：车速为 0 时踩下油门触发 `ignition_launch.wav` 点火爆燃。
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 全局状态与音频上下文
+    // ==========================================
+    let audioCtx = null;
+    let masterGain = null;
+    let isRunning = false;
+
+    // 物理参数
+    let engineRPM = 900;
+    let targetRPM = 900;
+    let carSpeed = 0;
+    let currentGear = 1;
+    let throttleLoad = 0;
+    let lastThrottleLoad = 0;
+    let brakeForce = 0;
+    let sliderVal = 0;
+
+    // 按键状态
+    let keyWDown = false;
+    let keySDown = false;
+
+    // 音频缓冲
+    const AUDIO_BANK = {
+      low_mid: null,
+      cruise_high: null,
+      decel: null,
+      ignition: null
+    };
+
+    // 运行中的声源节点
+    const batSources = {
+      low_mid: null,
+      low_mid_gain: null,
+      cruise_high: null,
+      cruise_high_gain: null,
+      decel: null,
+      decel_gain: null
+    };
+
+    // ==========================================
+    // 2. 音频初始化与加载
+    // ==========================================
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext({ sampleRate: 48000 });
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.85, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    async function safeDecode(urlOrFile) {
+      if (!audioCtx) initAudioContext();
+      try {
+        let ab;
+        if (urlOrFile instanceof File) {
+          ab = await urlOrFile.arrayBuffer();
+        } else {
+          const res = await fetch(urlOrFile);
+          if (!res.ok) return null;
+          ab = await res.arrayBuffer();
+        }
+        return await audioCtx.decodeAudioData(ab);
+      } catch (err) {
+        console.warn("解码跳过:", (urlOrFile && urlOrFile.name) || urlOrFile, err.message);
+        return null;
+      }
+    }
+
+    async function loadDefaultAssets() {
+      initAudioContext();
+      try {
+        AUDIO_BANK.low_mid = await safeDecode('audio_batmobile/loop_low_mid.wav');
+        AUDIO_BANK.cruise_high = await safeDecode('audio_batmobile/loop_cruise_high.wav');
+        AUDIO_BANK.decel = await safeDecode('audio_batmobile/decel_exhaust.wav');
+        AUDIO_BANK.ignition = await safeDecode('audio_batmobile/ignition_launch.wav');
+
+        document.getElementById('engineStatusBadge').textContent = "READY";
+      } catch (err) {
+        console.warn("默认路径载入提示:", err);
+      }
+    }
+
+    document.getElementById('folderInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      initAudioContext();
+
+      const fileMap = {};
+      files.forEach(f => fileMap[f.name] = f);
+
+      document.getElementById('engineStatusBadge').textContent = "LOADING...";
+
+      if (fileMap['loop_low_mid.wav']) AUDIO_BANK.low_mid = await safeDecode(fileMap['loop_low_mid.wav']);
+      if (fileMap['loop_cruise_high.wav']) AUDIO_BANK.cruise_high = await safeDecode(fileMap['loop_cruise_high.wav']);
+      if (fileMap['decel_exhaust.wav']) AUDIO_BANK.decel = await safeDecode(fileMap['decel_exhaust.wav']);
+      if (fileMap['ignition_launch.wav']) AUDIO_BANK.ignition = await safeDecode(fileMap['ignition_launch.wav']);
+
+      document.getElementById('engineStatusBadge').textContent = "READY";
+      alert('已成功解析并载入 Batmobile 蝙蝠车原声音效！');
+    });
+
+    // ==========================================
+    // 3. 引擎启停控制
+    // ==========================================
+    function toggleEngine() {
+      initAudioContext();
+      if (!isRunning) startEngine();
+      else stopEngine();
+    }
+
+    function startEngine() {
+      isRunning = true;
+      const btn = document.getElementById('startBtn');
+      btn.classList.add('active');
+      document.getElementById('startBtnIcon').textContent = '⏹';
+      document.getElementById('startBtnText').textContent = '关闭蝙蝠车引擎';
+      document.getElementById('engineStatusBadge').textContent = 'RUNNING';
+
+      stopBatmobileEngine();
+      const now = audioCtx.currentTime;
+
+      // 起步点火
+      if (AUDIO_BANK.ignition) {
+        playOneShot(AUDIO_BANK.ignition, 1.0);
+      }
+
+      // 常驻轨 1: 低中速循环 (loop_low_mid)
+      if (AUDIO_BANK.low_mid) {
+        const s1 = audioCtx.createBufferSource();
+        s1.buffer = AUDIO_BANK.low_mid;
+        s1.loop = true;
+        const g1 = audioCtx.createGain();
+        g1.gain.setValueAtTime(1.0, now);
+        s1.connect(g1).connect(masterGain);
+        s1.start(0);
+        batSources.low_mid = s1;
+        batSources.low_mid_gain = g1;
+      }
+
+      // 常驻轨 2: 高速喷气轰鸣 (loop_cruise_high)
+      if (AUDIO_BANK.cruise_high) {
+        const s2 = audioCtx.createBufferSource();
+        s2.buffer = AUDIO_BANK.cruise_high;
+        s2.loop = true;
+        const g2 = audioCtx.createGain();
+        g2.gain.setValueAtTime(0.0, now);
+        s2.connect(g2).connect(masterGain);
+        s2.start(0);
+        batSources.cruise_high = s2;
+        batSources.cruise_high_gain = g2;
+      }
+
+      // 常驻轨 3: 减速排气气流 (decel_exhaust)
+      if (AUDIO_BANK.decel) {
+        const s3 = audioCtx.createBufferSource();
+        s3.buffer = AUDIO_BANK.decel;
+        s3.loop = true;
+        const g3 = audioCtx.createGain();
+        g3.gain.setValueAtTime(0.0, now);
+        s3.connect(g3).connect(masterGain);
+        s3.start(0);
+        batSources.decel = s3;
+        batSources.decel_gain = g3;
+      }
+    }
+
+    function stopEngine() {
+      isRunning = false;
+      const btn = document.getElementById('startBtn');
+      btn.classList.remove('active');
+      document.getElementById('startBtnIcon').textContent = '▶';
+      document.getElementById('startBtnText').textContent = '启动蝙蝠车引擎';
+      document.getElementById('engineStatusBadge').textContent = 'STANDBY';
+
+      stopBatmobileEngine();
+    }
+
+    function stopBatmobileEngine() {
+      for (const k in batSources) {
+        if (batSources[k] && batSources[k].stop) {
+          try { batSources[k].stop(); } catch(e){}
+        }
+        batSources[k] = null;
+      }
+    }
+
+    function playOneShot(buf, vol = 1.0) {
+      if (!audioCtx || !buf) return;
+      const s = audioCtx.createBufferSource();
+      s.buffer = buf;
+      const g = audioCtx.createGain();
+      g.gain.value = vol;
+      s.connect(g).connect(masterGain);
+      s.start(0);
+    }
+
+    // ==========================================
+    // 4. 动力学与 Wwise 混合容器更新
+    // ==========================================
+    let lastTime = performance.now();
+
+    function physicsLoop(nowTime) {
+      const dt = Math.min(0.1, (nowTime - lastTime) / 1000);
+      lastTime = nowTime;
+
+      if (isRunning) {
+        let effectivePedal = sliderVal;
+        if (keyWDown) effectivePedal = 100;
+        else if (keySDown) effectivePedal = -100;
+
+        throttleLoad = Math.max(0, effectivePedal / 100);
+        brakeForce = Math.max(0, -effectivePedal / 100);
+
+        // 静止踩油门瞬间触发一次起步点火
+        if (lastThrottleLoad === 0 && throttleLoad > 0 && carSpeed < 5) {
+          if (AUDIO_BANK.ignition) playOneShot(AUDIO_BANK.ignition, 1.0);
+          const ignEl = document.getElementById('track_ign_val');
+          ignEl.textContent = '触发起步';
+          ignEl.style.color = '#ff1744';
+          setTimeout(() => {
+            ignEl.textContent = '待机';
+            ignEl.style.color = '#b388ff';
+          }, 800);
+        }
+        lastThrottleLoad = throttleLoad;
+
+        if (throttleLoad > 0) {
+          targetRPM = 1200 + throttleLoad * 4600;
+          carSpeed = Math.min(180, carSpeed + throttleLoad * dt * 55);
+          if (targetRPM >= 5600 && currentGear < 5) {
+            currentGear++;
+            targetRPM = 3400;
+          }
+        } else {
+          targetRPM = Math.max(900, targetRPM - (2400 + brakeForce * 3500) * dt);
+          carSpeed = Math.max(0, carSpeed - (dt * 15 + brakeForce * dt * 60));
+          if (targetRPM <= 1600 && currentGear > 1) {
+            currentGear--;
+            targetRPM = 3200;
+          }
+        }
+
+        engineRPM += (targetRPM - engineRPM) * Math.min(1.0, dt * 14.0);
+
+        updateBatmobileAudio(engineRPM, carSpeed, throttleLoad);
+        updateUI(effectivePedal);
+      }
+
+      requestAnimationFrame(physicsLoop);
+    }
+
+    // 基于 Wwise HIRC 曲线的交叉淡化算法
+    function updateBatmobileAudio(rpm, speed, throttle) {
+      if (!batSources.low_mid_gain) return;
+      const now = audioCtx.currentTime;
+
+      // 1. RTPC 986115703 (踏板负荷): 决定 Layer 0 (On-Throttle) 还是 Layer 1 (Off-Throttle)
+      const isOnThrottle = throttle >= 0.15;
+      document.getElementById('layerText').textContent = isOnThrottle ? 'Layer 0 给油' : 'Layer 1 滑行';
+
+      // 2. RTPC 1176766538 (车速/转速混合因子):
+      // 低速段以 low_mid 为基底；随车速提升，淡入 cruise_high (给油) 或 decel_exhaust (滑行)
+      const speedFactor = Math.min(1.0, speed / 110);
+
+      let wLow = 0;
+      let wHigh = 0;
+      let wDecel = 0;
+
+      if (isOnThrottle) {
+        // 给油层 (Layer 0)
+        wLow = Math.max(0.15, 1.0 - speedFactor * 0.85) * (0.5 + throttle * 0.5);
+        wHigh = Math.pow(speedFactor, 1.2) * (0.6 + throttle * 0.4);
+        wDecel = 0.0;
+      } else {
+        // 松油门滑行/减速层 (Layer 1)
+        wLow = Math.max(0.4, 1.0 - speedFactor * 0.5);
+        wHigh = 0.0;
+        // decel_exhaust 在高车速丢油门时声浪喷涌
+        wDecel = Math.pow(speedFactor, 1.1) * (0.4 + (rpm / 6000) * 0.6);
+      }
+
+      batSources.low_mid_gain.gain.setTargetAtTime(wLow, now, 0.04);
+      if (batSources.cruise_high_gain) batSources.cruise_high_gain.gain.setTargetAtTime(wHigh, now, 0.04);
+      if (batSources.decel_gain) batSources.decel_gain.gain.setTargetAtTime(wDecel, now, 0.04);
+
+      // 微变调补偿 (0.88x ~ 1.25x)
+      const pitchRate = 0.88 + (rpm / 6000) * 0.36;
+      if (batSources.low_mid) batSources.low_mid.playbackRate.setValueAtTime(pitchRate, now);
+      if (batSources.cruise_high) batSources.cruise_high.playbackRate.setValueAtTime(pitchRate * 0.98, now);
+      if (batSources.decel) batSources.decel.playbackRate.setValueAtTime(pitchRate * 0.92, now);
+
+      // 更新电平表
+      updateMeter('track_low', wLow);
+      updateMeter('track_high', wHigh);
+      updateMeter('track_decel', wDecel);
+    }
+
+    function updateMeter(id, val) {
+      const fill = document.getElementById(id + '_fill');
+      const txt = document.getElementById(id + '_val');
+      const pct = Math.round(Math.min(1.0, val) * 100);
+      if (fill) fill.style.width = pct + '%';
+      if (txt) txt.textContent = pct + '%';
+    }
+
+    function updateUI(pedal) {
+      const rounded = Math.round(engineRPM);
+      document.getElementById('rpmText').textContent = rounded;
+      document.getElementById('speedText').textContent = Math.round(carSpeed) + ' km/h';
+      document.getElementById('gearText').textContent = currentGear + ' 挡';
+
+      const needleAngle = -120 + (engineRPM / 6000) * 240;
+      document.getElementById('gaugeNeedle').style.transform = `rotate(${needleAngle}deg)`;
+      const arcPercent = Math.max(0, Math.min(1, engineRPM / 6000));
+      document.getElementById('gaugeArc').style.strokeDashoffset = 450 - (arcPercent * 300);
+
+      const pText = document.getElementById('pedalStatusText');
+      if (pedal > 0) {
+        pText.textContent = `+${Math.round(pedal)}% (喷气加速)`;
+        pText.style.color = 'var(--accent-orange)';
+      } else if (pedal < 0) {
+        pText.textContent = `${Math.round(pedal)}% (刹车制动)`;
+        pText.style.color = '#ff5252';
+      } else {
+        pText.textContent = `0% (怠速滑行)`;
+        pText.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // ==========================================
+    // 5. 事件监听绑定
+    // ==========================================
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'w' || e.key === 'W') keyWDown = true;
+      if (e.key === 's' || e.key === 'S') keySDown = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'w' || e.key === 'W') keyWDown = false;
+      if (e.key === 's' || e.key === 'S') keySDown = false;
+    });
+
+    const pSlider = document.getElementById('pedalSlider');
+    pSlider.addEventListener('input', (e) => {
+      sliderVal = parseFloat(e.target.value);
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDefaultAssets();
+      requestAnimationFrame(physicsLoop);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rocket League · Iron Horse 蒸汽火车声浪仿真器 (冲程节奏与怠速气阀)</title>
+  <style>
+    :root {
+      --bg-color: #0b0e14;
+      --card-bg: #151b23;
+      --card-inner: #0d1117;
+      --accent-cyan: #00e5ff;
+      --accent-green: #00ff88;
+      --accent-orange: #ff9100;
+      --accent-red: #ff1744;
+      --accent-purple: #b388ff;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --border-color: #30363d;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #1f1b2c 0%, var(--bg-color) 75%);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 18px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      background: linear-gradient(90deg, #ff9100, #ff1744, #00e5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 13.5px;
+    }
+
+    .nav-bar {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 1080px;
+    }
+
+    .nav-btn {
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--accent-orange);
+      color: #fff;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .panel h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 10px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
+    }
+
+    .dashboard-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gauge-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+      transform: rotate(0deg);
+    }
+
+    .gauge-needle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 85px;
+      background: linear-gradient(to top, #ff1744, #ff9100);
+      transform-origin: 50% 90%;
+      transform: rotate(-120deg);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(255, 23, 68, 0.6);
+      transition: transform 0.06s linear;
+      pointer-events: none;
+    }
+
+    .gauge-center-cap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      margin-top: -9px;
+      margin-left: -9px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0,0,0,0.8);
+    }
+
+    .rpm-display {
+      text-align: center;
+      margin-top: -24px;
+    }
+
+    .rpm-num {
+      font-size: 38px;
+      font-weight: 900;
+      font-family: monospace;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+
+    .rpm-unit {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: var(--card-inner);
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      font-family: monospace;
+    }
+
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .chug-viz-box {
+      background: var(--card-inner);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .chug-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .chug-lights {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .chug-light {
+      flex: 1;
+      height: 48px;
+      background: #161b22;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      transition: all 0.08s ease;
+    }
+
+    .chug-light.active-a {
+      background: rgba(255, 23, 68, 0.25);
+      border-color: #ff1744;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(255, 23, 68, 0.45);
+    }
+
+    .chug-light.active-b {
+      background: rgba(255, 145, 0, 0.25);
+      border-color: #ff9100;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(255, 145, 0, 0.45);
+    }
+
+    .chug-light.active-c {
+      background: rgba(0, 229, 255, 0.25);
+      border-color: #00e5ff;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.45);
+    }
+
+    .chug-status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: monospace;
+      padding: 6px 10px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 6px;
+    }
+
+    .pedal-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pedal-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pedal-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 8px;
+      border-radius: 4px;
+      background: #21262d;
+      outline: none;
+    }
+
+    .pedal-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-orange);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(255, 145, 0, 0.6);
+    }
+
+    .pedal-slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .action-btn {
+      padding: 12px 18px;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+      border-color: var(--accent-orange);
+    }
+
+    .action-btn.active {
+      background: rgba(255, 145, 0, 0.15);
+      border-color: var(--accent-orange);
+      color: var(--accent-orange);
+      box-shadow: 0 0 12px rgba(255, 145, 0, 0.3);
+    }
+
+    .rising-pop-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(255, 23, 68, 0.2);
+      border: 1px solid #ff1744;
+      color: #ff1744;
+      font-size: 11px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .rising-pop-tag.show {
+      opacity: 1;
+    }
+
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .track-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--card-inner);
+      border-radius: 6px;
+      font-size: 12.5px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .track-row .name {
+      font-weight: 600;
+    }
+
+    .track-row .status {
+      font-size: 11px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Rocket League · Iron Horse 蒸汽火车仿真控制台</h1>
+    <p>怠速蒸汽气阀吐息 (Steam Vents) · 起步给油上升沿放炮 (Rising Edge Pops) · 活塞冲程节奏加速 (A→B→C) · 巡航背景轨 (Loop 01)</p>
+  </header>
+
+  <div class="nav-bar">
+    <a href="../index.html" class="nav-btn">← 返回双架构主页</a>
+    <a href="batmobile.html" class="nav-btn">🦇 切换至 Batmobile 控制台 →</a>
+    <label class="nav-btn" style="cursor:pointer;">
+      📁 选入 audio_train_voice 文件夹
+      <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+    </label>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- 左侧：驾驶舱仪表与油门刹车 -->
+    <div class="panel">
+      <h2>
+        火车仪表盘 & 状态
+        <span class="badge" id="engineStatusBadge">STANDBY</span>
+      </h2>
+
+      <div class="dashboard-center">
+        <div class="gauge-wrapper">
+          <svg class="gauge-svg" viewBox="0 0 240 240">
+            <path d="M 36 174 A 92 92 0 1 1 204 174" fill="none" stroke="#21262d" stroke-width="12" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M 36 174 A 92 92 0 1 1 204 174" fill="none" stroke="#ff9100" stroke-width="12" stroke-linecap="round" stroke-dasharray="450" stroke-dashoffset="450"/>
+          </svg>
+          <div class="gauge-needle" id="gaugeNeedle"></div>
+          <div class="gauge-center-cap"></div>
+        </div>
+
+        <div class="rpm-display">
+          <div class="rpm-num" id="rpmText">900</div>
+          <div class="rpm-unit">ENGINE RPM (转速)</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-val" id="speedText">0 km/h</div>
+          <div class="stat-lbl">机车车速</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="bpmText">怠速气阀</div>
+          <div class="stat-lbl">活塞频率</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-val" id="stateText">怠速呼吸</div>
+          <div class="stat-lbl">引擎工况</div>
+        </div>
+      </div>
+
+      <button class="action-btn" id="startBtn" onclick="toggleEngine()">
+        <span id="startBtnIcon">▶</span>
+        <span id="startBtnText">启动火车引擎</span>
+      </button>
+
+      <div class="pedal-controls">
+        <div class="pedal-slider-wrap">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight:600;">
+            <span>单踏板模拟 (油门 / 刹车)</span>
+            <span id="pedalStatusText" style="color:var(--text-muted);">0% (空挡)</span>
+          </div>
+          <input type="range" class="pedal-slider" id="pedalSlider" min="-100" max="100" value="0">
+          <div class="pedal-slider-labels">
+            <span>-100% 刹车制动</span>
+            <span>0% 怠速</span>
+            <span>+100% 地板油</span>
+          </div>
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;">
+          💡 支持键盘快捷键：按住 <b>W 键</b>地板油加速；按住 <b>S 键</b>刹车；松开恢复怠速。
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：冲程调度监控与声轨状态 -->
+    <div class="panel">
+      <h2>
+        Wwise 活塞冲程调度矩阵
+        <span class="rising-pop-tag" id="risingPopTag">💥 起步上升沿放炮！</span>
+      </h2>
+
+      <!-- 冲程三缸交替跳灯 -->
+      <div class="chug-viz-box">
+        <div class="chug-header">
+          <span>三阶段活塞冲程节奏 (A → B → C)</span>
+          <span id="chugCadenceText" style="color:var(--accent-cyan); font-family:monospace;">怠速静音</span>
+        </div>
+
+        <div class="chug-lights">
+          <div class="chug-light" id="lightA">
+            <div>冲程 A</div>
+            <div style="font-size:9.5px; opacity:0.8;">11 随机变体</div>
+          </div>
+          <div class="chug-light" id="lightB">
+            <div>冲程 B</div>
+            <div style="font-size:9.5px; opacity:0.8;">11 随机变体</div>
+          </div>
+          <div class="chug-light" id="lightC">
+            <div>冲程 C</div>
+            <div style="font-size:9.5px; opacity:0.8;">11 随机变体</div>
+          </div>
+        </div>
+
+        <div class="chug-status">
+          <span>当前活动采样:</span>
+          <span id="activeSampleText" style="color:#fff;">怠速 Steam Vents 吐息</span>
+        </div>
+      </div>
+
+      <!-- 声学构件状态列表 -->
+      <h2>声学构件实时状态</h2>
+      <div class="track-list">
+        <div class="track-row">
+          <div>
+            <div class="name">💨 怠速蒸汽阀吐息 (Steam Vents)</div>
+            <div style="font-size:11px; color:var(--text-muted);">8 变体池 · 仅在零油门且低速时定期吐气</div>
+          </div>
+          <div class="status" id="statusVents" style="color:#00ff88;">待机</div>
+        </div>
+
+        <div class="track-row">
+          <div>
+            <div class="name">💥 起步上升沿回火 (Backfire Pops)</div>
+            <div style="font-size:11px; color:var(--text-muted);">5 变体池 · 仅在油门 0 → >0 上升沿瞬间触发单次</div>
+          </div>
+          <div class="status" id="statusPops" style="color:var(--text-muted);">监听中</div>
+        </div>
+
+        <div class="track-row">
+          <div>
+            <div class="name">🚂 循环巡航底噪 (Speed Loop 01)</div>
+            <div style="font-size:11px; color:var(--text-muted);">有车速时在背景循环 · 音量与变调随车速提高</div>
+          </div>
+          <div class="status" id="statusLoop" style="color:var(--text-muted);">静音</div>
+        </div>
+
+        <div class="track-row">
+          <div>
+            <div class="name">⚙️ 活塞主冲程池 (Strokes A / B / C)</div>
+            <div style="font-size:11px; color:var(--text-muted);">33 变体 · 运动时顺次交替触发 · 节奏随车速加速</div>
+          </div>
+          <div class="status" id="statusStrokes" style="color:var(--text-muted);">静音</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 全局状态与音频资源
+    // ==========================================
+    let audioCtx = null;
+    let masterGain = null;
+    let isRunning = false;
+
+    // 物理参数
+    let engineRPM = 900;
+    let targetRPM = 900;
+    let carSpeed = 0;
+    let throttleLoad = 0;
+    let lastThrottleLoad = 0;
+    let brakeForce = 0;
+    let sliderVal = 0;
+
+    // 按键状态
+    let keyWDown = false;
+    let keySDown = false;
+
+    // 冲程节拍与怠速呼吸计时器
+    let strokeTimer = 0;
+    let idleVentTimer = 0;
+    let currentStrokeGroup = 0; // 0 -> A, 1 -> B, 2 -> C
+    let lastStrokeIndices = [-1, -1, -1];
+    let lastVentIdx = -1;
+    let lastPopIdx = -1;
+
+    // 音频缓冲库
+    const AUDIO_BANK = {
+      strokes_a: [],  // 11
+      strokes_b: [],  // 11
+      strokes_c: [],  // 11
+      vents: [],      // 8
+      pops: [],       // 5
+      loop_01: null   // speed_loop_01
+    };
+
+    // 背景 Loop 01 节点
+    let loop01Source = null;
+    let loop01Gain = null;
+
+    // ==========================================
+    // 2. 音频环境初始化与加载
+    // ==========================================
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext({ sampleRate: 48000 });
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.85, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    async function safeDecode(urlOrFile) {
+      if (!audioCtx) initAudioContext();
+      try {
+        let ab;
+        if (urlOrFile instanceof File) {
+          ab = await urlOrFile.arrayBuffer();
+        } else {
+          const res = await fetch(urlOrFile);
+          if (!res.ok) return null;
+          ab = await res.arrayBuffer();
+        }
+        return await audioCtx.decodeAudioData(ab);
+      } catch (err) {
+        console.warn("解码单个音频跳过:", (urlOrFile && urlOrFile.name) || urlOrFile, err.message);
+        return null;
+      }
+    }
+
+    async function loadDefaultAssets() {
+      initAudioContext();
+      try {
+        AUDIO_BANK.strokes_a = [];
+        AUDIO_BANK.strokes_b = [];
+        AUDIO_BANK.strokes_c = [];
+        AUDIO_BANK.vents = [];
+        AUDIO_BANK.pops = [];
+        AUDIO_BANK.loop_01 = null;
+
+        // 1. 载入 33 冲程 (A, B, C 各 11 个)
+        for (let i = 1; i <= 11; i++) {
+          const idx = i < 10 ? '0' + i : i;
+          const [bA, bB, bC] = await Promise.all([
+            safeDecode(`audio_train_voice/strokes_a/stroke_a_${idx}.wav`),
+            safeDecode(`audio_train_voice/strokes_b/stroke_b_${idx}.wav`),
+            safeDecode(`audio_train_voice/strokes_c/stroke_c_${idx}.wav`)
+          ]);
+          if (bA) AUDIO_BANK.strokes_a.push(bA);
+          if (bB) AUDIO_BANK.strokes_b.push(bB);
+          if (bC) AUDIO_BANK.strokes_c.push(bC);
+        }
+
+        // 2. 载入 8 个怠速蒸汽气阀 (Steam Vents)
+        for (let i = 1; i <= 8; i++) {
+          const idx = i < 10 ? '0' + i : i;
+          const b = await safeDecode(`audio_train_voice/steam_vents/vent_${idx}.wav`);
+          if (b) AUDIO_BANK.vents.push(b);
+        }
+
+        // 3. 载入 5 个起步上升沿放炮 (Backfire Pops)
+        for (let i = 1; i <= 5; i++) {
+          const idx = i < 10 ? '0' + i : i;
+          const b = await safeDecode(`audio_train_voice/backfire_pops/pop_${idx}.wav`);
+          if (b) AUDIO_BANK.pops.push(b);
+        }
+
+        // 4. 载入 Loop 01 背景巡航轨
+        AUDIO_BANK.loop_01 = await safeDecode('audio_train_voice/loops/speed_loop_01.wav');
+
+        document.getElementById('engineStatusBadge').textContent = "READY";
+      } catch (err) {
+        console.warn("默认资源载入提示:", err);
+      }
+    }
+
+    // 文件夹上传载入
+    document.getElementById('folderInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      initAudioContext();
+
+      const fileMap = {};
+      files.forEach(f => fileMap[f.name] = f);
+
+      document.getElementById('engineStatusBadge').textContent = "LOADING...";
+
+      AUDIO_BANK.strokes_a = [];
+      AUDIO_BANK.strokes_b = [];
+      AUDIO_BANK.strokes_c = [];
+      AUDIO_BANK.vents = [];
+      AUDIO_BANK.pops = [];
+      AUDIO_BANK.loop_01 = null;
+
+      const wavNames = Object.keys(fileMap)
+        .filter(n => n.toLowerCase().endsWith('.wav'))
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+      let count = 0;
+      for (const name of wavNames) {
+        const buf = await safeDecode(fileMap[name]);
+        if (!buf) continue;
+
+        if (name.includes('stroke_a_')) AUDIO_BANK.strokes_a.push(buf);
+        else if (name.includes('stroke_b_')) AUDIO_BANK.strokes_b.push(buf);
+        else if (name.includes('stroke_c_')) AUDIO_BANK.strokes_c.push(buf);
+        else if (name.includes('vent_')) AUDIO_BANK.vents.push(buf);
+        else if (name.includes('pop_')) AUDIO_BANK.pops.push(buf);
+        else if (name.includes('speed_loop_01')) AUDIO_BANK.loop_01 = buf;
+        count++;
+      }
+
+      document.getElementById('engineStatusBadge').textContent = "READY";
+      alert(`已成功解析并载入 ${count} 个 Train Voice 原声音频！`);
+    });
+
+    // ==========================================
+    // 3. 火车引擎启停控制
+    // ==========================================
+    function toggleEngine() {
+      initAudioContext();
+      if (!isRunning) startEngine();
+      else stopEngine();
+    }
+
+    function startEngine() {
+      isRunning = true;
+      const btn = document.getElementById('startBtn');
+      btn.classList.add('active');
+      document.getElementById('startBtnIcon').textContent = '⏹';
+      document.getElementById('startBtnText').textContent = '关闭火车引擎';
+      document.getElementById('engineStatusBadge').textContent = 'RUNNING';
+
+      strokeTimer = 0;
+      idleVentTimer = 0;
+      currentStrokeGroup = 0;
+
+      // 启动 Loop 01 背景常驻循环轨（初始音量为 0）
+      if (AUDIO_BANK.loop_01) {
+        const now = audioCtx.currentTime;
+        loop01Source = audioCtx.createBufferSource();
+        loop01Source.buffer = AUDIO_BANK.loop_01;
+        loop01Source.loop = true;
+
+        loop01Gain = audioCtx.createGain();
+        loop01Gain.gain.setValueAtTime(0.0, now);
+
+        loop01Source.connect(loop01Gain).connect(masterGain);
+        loop01Source.start(0);
+      }
+    }
+
+    function stopEngine() {
+      isRunning = false;
+      const btn = document.getElementById('startBtn');
+      btn.classList.remove('active');
+      document.getElementById('startBtnIcon').textContent = '▶';
+      document.getElementById('startBtnText').textContent = '启动火车引擎';
+      document.getElementById('engineStatusBadge').textContent = 'STANDBY';
+
+      if (loop01Source) {
+        try { loop01Source.stop(); } catch(e){}
+        loop01Source = null;
+        loop01Gain = null;
+      }
+
+      // 重置灯光
+      ['lightA', 'lightB', 'lightC'].forEach(id => {
+        document.getElementById(id).className = 'chug-light';
+      });
+      document.getElementById('chugCadenceText').textContent = '怠速静音';
+      document.getElementById('activeSampleText').textContent = '未启动';
+    }
+
+    // ==========================================
+    // 4. 动力学与声学核心调度
+    // ==========================================
+    let lastTime = performance.now();
+
+    function physicsLoop(nowTime) {
+      const dt = Math.min(0.1, (nowTime - lastTime) / 1000);
+      lastTime = nowTime;
+
+      if (isRunning) {
+        // 1. 计算踏板综合输入
+        let effectivePedal = sliderVal;
+        if (keyWDown) effectivePedal = 100;
+        else if (keySDown) effectivePedal = -100;
+
+        throttleLoad = Math.max(0, effectivePedal / 100);
+        brakeForce = Math.max(0, -effectivePedal / 100);
+
+        // 2. 【核心机制】：油门从 0 到 >0 上升沿瞬间触发 Backfire Pop
+        if (lastThrottleLoad === 0 && throttleLoad > 0) {
+          triggerRisingEdgePop();
+        }
+        lastThrottleLoad = throttleLoad;
+
+        // 3. 动力学转速与车速演进
+        if (throttleLoad > 0) {
+          targetRPM = 900 + throttleLoad * 4800;
+          carSpeed = Math.min(130, carSpeed + throttleLoad * dt * 45);
+        } else {
+          targetRPM = Math.max(900, targetRPM - (2200 + brakeForce * 3500) * dt);
+          carSpeed = Math.max(0, carSpeed - (dt * 12 + brakeForce * dt * 60));
+        }
+
+        engineRPM += (targetRPM - engineRPM) * Math.min(1.0, dt * 14.0);
+
+        // 4. 声学状态分发
+        const isIdle = (carSpeed < 2.0 && throttleLoad === 0);
+
+        if (isIdle) {
+          // --- 怠速工况：仅定期吐出 Steam Vents，冲程与 Loop01 静音 ---
+          document.getElementById('stateText').textContent = '怠速吐息';
+          document.getElementById('statusVents').textContent = '周期吐息中';
+          document.getElementById('statusVents').style.color = '#00ff88';
+          document.getElementById('statusLoop').textContent = '静音';
+          document.getElementById('statusLoop').style.color = 'var(--text-muted)';
+          document.getElementById('statusStrokes').textContent = '静音';
+          document.getElementById('statusStrokes').style.color = 'var(--text-muted)';
+          document.getElementById('bpmText').textContent = '气阀吐息';
+          document.getElementById('chugCadenceText').textContent = '怠速静音';
+
+          ['lightA', 'lightB', 'lightC'].forEach(id => {
+            document.getElementById(id).className = 'chug-light';
+          });
+
+          // 巡航 Loop 01 静音
+          if (loop01Gain) {
+            loop01Gain.gain.setTargetAtTime(0.0, audioCtx.currentTime, 0.08);
+          }
+
+          // 怠速周期性触发气阀 (约每 1.2 秒吐气一次)
+          idleVentTimer += dt;
+          if (idleVentTimer >= 1.2) {
+            idleVentTimer = 0;
+            triggerIdleSteamVent();
+          }
+
+          // 保持冲程时钟清零，准备起步
+          strokeTimer = 0;
+        } else {
+          // --- 运动/行驶工况：冲程 A->B->C 交替加速，Loop01 背景启动 ---
+          document.getElementById('stateText').textContent = carSpeed > 40 ? '高速巡航' : '起步加速';
+          document.getElementById('statusVents').textContent = '闭阀';
+          document.getElementById('statusVents').style.color = 'var(--text-muted)';
+          document.getElementById('statusLoop').textContent = '循环活跃';
+          document.getElementById('statusLoop').style.color = 'var(--accent-orange)';
+          document.getElementById('statusStrokes').textContent = '交替跳动';
+          document.getElementById('statusStrokes').style.color = 'var(--accent-cyan)';
+
+          idleVentTimer = 0;
+
+          // Loop 01 背景巡航轨：音量随车速提高，轻微变调
+          if (loop01Gain && loop01Source) {
+            const now = audioCtx.currentTime;
+            const loopVol = Math.min(0.9, 0.2 + (carSpeed / 100) * 0.7);
+            const loopPitch = 0.95 + (carSpeed / 130) * 0.35;
+            loop01Gain.gain.setTargetAtTime(loopVol, now, 0.05);
+            loop01Source.playbackRate.setValueAtTime(loopPitch, now);
+          }
+
+          // 活塞冲程频率：从低速 1.8 Hz 到高速 8.5 Hz 节拍加速
+          const strokeFreq = 1.8 + (carSpeed / 120) * 4.5 + (engineRPM / 6000) * 2.2;
+          document.getElementById('bpmText').textContent = strokeFreq.toFixed(1) + ' Hz';
+          document.getElementById('chugCadenceText').textContent = `节拍: ${strokeFreq.toFixed(1)} Hz (${Math.round(strokeFreq * 60)} BPM)`;
+
+          const strokePeriod = 1.0 / strokeFreq;
+          strokeTimer += dt;
+
+          if (strokeTimer >= strokePeriod) {
+            strokeTimer -= strokePeriod;
+            triggerNextStroke();
+          }
+        }
+
+        updateUI(effectivePedal);
+      }
+
+      requestAnimationFrame(physicsLoop);
+    }
+
+    // 触发上升沿 Backfire Pop
+    function triggerRisingEdgePop() {
+      if (!AUDIO_BANK.pops.length) return;
+      let idx = 0;
+      do {
+        idx = Math.floor(Math.random() * AUDIO_BANK.pops.length);
+      } while (idx === lastPopIdx && AUDIO_BANK.pops.length > 1);
+      lastPopIdx = idx;
+
+      playOneShot(AUDIO_BANK.pops[idx], 1.15, 0.98 + Math.random() * 0.06);
+
+      // UI 闪烁
+      const tag = document.getElementById('risingPopTag');
+      tag.classList.add('show');
+      setTimeout(() => tag.classList.remove('show'), 600);
+      document.getElementById('statusPops').textContent = `触发 #${idx + 1}`;
+      document.getElementById('statusPops').style.color = '#ff1744';
+      setTimeout(() => {
+        document.getElementById('statusPops').textContent = '监听中';
+        document.getElementById('statusPops').style.color = 'var(--text-muted)';
+      }, 1000);
+    }
+
+    // 触发怠速蒸汽气阀吐息 (Steam Vents)
+    function triggerIdleSteamVent() {
+      if (!AUDIO_BANK.vents.length) return;
+      let idx = 0;
+      do {
+        idx = Math.floor(Math.random() * AUDIO_BANK.vents.length);
+      } while (idx === lastVentIdx && AUDIO_BANK.vents.length > 1);
+      lastVentIdx = idx;
+
+      playOneShot(AUDIO_BANK.vents[idx], 0.75, 0.96 + Math.random() * 0.08);
+      document.getElementById('activeSampleText').textContent = `Steam Vent #${idx + 1}`;
+    }
+
+    // 触发单发活塞冲程 (A -> B -> C 依次交替轮换)
+    function triggerNextStroke() {
+      const groups = [AUDIO_BANK.strokes_a, AUDIO_BANK.strokes_b, AUDIO_BANK.strokes_c];
+      const curGroupPool = groups[currentStrokeGroup];
+      if (!curGroupPool || curGroupPool.length === 0) return;
+
+      let idx = 0;
+      do {
+        idx = Math.floor(Math.random() * curGroupPool.length);
+      } while (idx === lastStrokeIndices[currentStrokeGroup] && curGroupPool.length > 1);
+
+      lastStrokeIndices[currentStrokeGroup] = idx;
+      const buf = curGroupPool[idx];
+      if (!buf) return;
+
+      // 冲程音高轻微随转速提升
+      const strokePitch = 0.95 + (engineRPM / 6000) * 0.22 + (Math.random() * 0.05);
+      playOneShot(buf, 0.9, strokePitch);
+
+      // UI 灯光切换
+      const lights = [document.getElementById('lightA'), document.getElementById('lightB'), document.getElementById('lightC')];
+      lights.forEach(l => l.className = 'chug-light');
+      const cls = currentStrokeGroup === 0 ? 'active-a' : (currentStrokeGroup === 1 ? 'active-b' : 'active-c');
+      lights[currentStrokeGroup].classList.add(cls);
+
+      const groupNames = ['冲程 A', '冲程 B', '冲程 C'];
+      document.getElementById('activeSampleText').textContent = `${groupNames[currentStrokeGroup]} #${idx + 1}`;
+
+      // 步进到下一组
+      currentStrokeGroup = (currentStrokeGroup + 1) % 3;
+    }
+
+    function playOneShot(buf, vol = 1.0, pitch = 1.0) {
+      if (!audioCtx || !buf) return;
+      const s = audioCtx.createBufferSource();
+      s.buffer = buf;
+      s.playbackRate.value = pitch;
+      const g = audioCtx.createGain();
+      g.gain.value = vol;
+      s.connect(g).connect(masterGain);
+      s.start(0);
+    }
+
+    function updateUI(pedal) {
+      const rounded = Math.round(engineRPM);
+      document.getElementById('rpmText').textContent = rounded;
+      document.getElementById('speedText').textContent = Math.round(carSpeed) + ' km/h';
+
+      const needleAngle = -120 + (engineRPM / 6000) * 240;
+      document.getElementById('gaugeNeedle').style.transform = `rotate(${needleAngle}deg)`;
+      const arcPercent = Math.max(0, Math.min(1, engineRPM / 6000));
+      document.getElementById('gaugeArc').style.strokeDashoffset = 450 - (arcPercent * 300);
+
+      const pText = document.getElementById('pedalStatusText');
+      if (pedal > 0) {
+        pText.textContent = `+${Math.round(pedal)}% (油门加速)`;
+        pText.style.color = 'var(--accent-orange)';
+      } else if (pedal < 0) {
+        pText.textContent = `${Math.round(pedal)}% (刹车制动)`;
+        pText.style.color = '#ff5252';
+      } else {
+        pText.textContent = `0% (怠速)`;
+        pText.style.color = 'var(--text-muted)';
+      }
+    }
+
+    // ==========================================
+    // 5. 事件监听绑定
+    // ==========================================
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'w' || e.key === 'W') keyWDown = true;
+      if (e.key === 's' || e.key === 'S') keySDown = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'w' || e.key === 'W') keyWDown = false;
+      if (e.key === 's' || e.key === 'S') keySDown = false;
+    });
+
+    const pSlider = document.getElementById('pedalSlider');
+    pSlider.addEventListener('input', (e) => {
+      sliderVal = parseFloat(e.target.value);
+    });
+
+    // 页面载入自检
+    window.addEventListener('DOMContentLoaded', () => {
+      loadDefaultAssets();
+      requestAnimationFrame(physicsLoop);
+    });
+  </script>
+</body>
+</html>
