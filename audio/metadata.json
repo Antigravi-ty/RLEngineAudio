@@ -1,0 +1,167 @@
+{
+  "vehicle": "Human Voice (Rocket League SFX_REV_HumanVoice)",
+  "engine_type": "Human Voice Vocal Engine",
+  "sample_rate": 48000,
+  "freq_range": [
+    48.0,
+    132.6
+  ],
+  "rpm_range": [
+    900,
+    6000
+  ],
+  "slices": [
+    {
+      "index": 0,
+      "freq": 48.0,
+      "cycles": 28,
+      "samples": 27944,
+      "on_file": "slice_00_48.0hz.wav",
+      "off_file": "slice_00_48.0hz_off.wav"
+    },
+    {
+      "index": 1,
+      "freq": 50.42,
+      "cycles": 30,
+      "samples": 28560,
+      "on_file": "slice_01_50.4hz.wav",
+      "off_file": "slice_01_50.4hz_off.wav"
+    },
+    {
+      "index": 2,
+      "freq": 55.62,
+      "cycles": 33,
+      "samples": 28479,
+      "on_file": "slice_02_55.6hz.wav",
+      "off_file": "slice_02_55.6hz_off.wav"
+    },
+    {
+      "index": 3,
+      "freq": 60.15,
+      "cycles": 36,
+      "samples": 28728,
+      "on_file": "slice_03_60.2hz.wav",
+      "off_file": "slice_03_60.2hz_off.wav"
+    },
+    {
+      "index": 4,
+      "freq": 64.43,
+      "cycles": 38,
+      "samples": 28310,
+      "on_file": "slice_04_64.4hz.wav",
+      "off_file": "slice_04_64.4hz_off.wav"
+    },
+    {
+      "index": 5,
+      "freq": 68.18,
+      "cycles": 40,
+      "samples": 28160,
+      "on_file": "slice_05_68.2hz.wav",
+      "off_file": "slice_05_68.2hz_off.wav"
+    },
+    {
+      "index": 6,
+      "freq": 72.07,
+      "cycles": 43,
+      "samples": 28638,
+      "on_file": "slice_06_72.1hz.wav",
+      "off_file": "slice_06_72.1hz_off.wav"
+    },
+    {
+      "index": 7,
+      "freq": 77.05,
+      "cycles": 46,
+      "samples": 28658,
+      "on_file": "slice_07_77.0hz.wav",
+      "off_file": "slice_07_77.0hz_off.wav"
+    },
+    {
+      "index": 8,
+      "freq": 81.49,
+      "cycles": 48,
+      "samples": 28272,
+      "on_file": "slice_08_81.5hz.wav",
+      "off_file": "slice_08_81.5hz_off.wav"
+    },
+    {
+      "index": 9,
+      "freq": 84.36,
+      "cycles": 50,
+      "samples": 28450,
+      "on_file": "slice_09_84.4hz.wav",
+      "off_file": "slice_09_84.4hz_off.wav"
+    },
+    {
+      "index": 10,
+      "freq": 89.05,
+      "cycles": 53,
+      "samples": 28567,
+      "on_file": "slice_10_89.1hz.wav",
+      "off_file": "slice_10_89.1hz_off.wav"
+    },
+    {
+      "index": 11,
+      "freq": 93.39,
+      "cycles": 56,
+      "samples": 28784,
+      "on_file": "slice_11_93.4hz.wav",
+      "off_file": "slice_11_93.4hz_off.wav"
+    },
+    {
+      "index": 12,
+      "freq": 96.58,
+      "cycles": 57,
+      "samples": 28329,
+      "on_file": "slice_12_96.6hz.wav",
+      "off_file": "slice_12_96.6hz_off.wav"
+    },
+    {
+      "index": 13,
+      "freq": 98.16,
+      "cycles": 58,
+      "samples": 28362,
+      "on_file": "slice_13_98.2hz.wav",
+      "off_file": "slice_13_98.2hz_off.wav"
+    },
+    {
+      "index": 14,
+      "freq": 104.12,
+      "cycles": 62,
+      "samples": 28582,
+      "on_file": "slice_14_104.1hz.wav",
+      "off_file": "slice_14_104.1hz_off.wav"
+    },
+    {
+      "index": 15,
+      "freq": 107.62,
+      "cycles": 64,
+      "samples": 28544,
+      "on_file": "slice_15_107.6hz.wav",
+      "off_file": "slice_15_107.6hz_off.wav"
+    },
+    {
+      "index": 16,
+      "freq": 115.11,
+      "cycles": 69,
+      "samples": 28773,
+      "on_file": "slice_16_115.1hz.wav",
+      "off_file": "slice_16_115.1hz_off.wav"
+    },
+    {
+      "index": 17,
+      "freq": 122.14,
+      "cycles": 73,
+      "samples": 28689,
+      "on_file": "slice_17_122.1hz.wav",
+      "off_file": "slice_17_122.1hz_off.wav"
+    },
+    {
+      "index": 18,
+      "freq": 132.6,
+      "cycles": 79,
+      "samples": 28598,
+      "on_file": "slice_18_132.6hz.wav",
+      "off_file": "slice_18_132.6hz_off.wav"
+    }
+  ]
+}

@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rocket League · Human Voice 声浪高保真控制台 (V4 常驻零爆音架构)</title>
+  <style>
+    :root {
+      --bg-color: #0b0e14;
+      --card-bg: #151b23;
+      --card-inner: #0d1117;
+      --accent-cyan: #00e5ff;
+      --accent-green: #00ff88;
+      --accent-orange: #ff9100;
+      --accent-red: #ff1744;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --border-color: #30363d;
+      --border-focus: #58a6ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 15%, #162032 0%, var(--bg-color) 75%);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 16px;
+      overflow-x: hidden;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #00e5ff, #00ff88, #ff9100);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .notice-bar {
+      display: none;
+      background: rgba(255, 145, 0, 0.15);
+      border: 1px solid var(--accent-orange);
+      color: #ffb74d;
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      max-width: 1080px;
+      width: 100%;
+      font-size: 13px;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .notice-bar.active {
+      display: flex;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 20px;
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    @media (max-width: 960px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+
+    .panel h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .panel h2 .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: rgba(0, 229, 255, 0.15);
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* 仪表盘 */
+    .dashboard-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 0;
+    }
+
+    .gauge-wrapper {
+      position: relative;
+      width: 240px;
+      height: 240px;
+    }
+
+    .gauge-svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .needle {
+      transform-origin: 120px 120px;
+      transition: transform 0.04s cubic-bezier(0.1, 0.9, 0.2, 1);
+    }
+
+    .rpm-display {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .rpm-number {
+      font-size: 36px;
+      font-weight: 900;
+      font-family: monospace;
+      color: #ffffff;
+      text-shadow: 0 0 14px rgba(0, 229, 255, 0.7);
+      line-height: 1;
+    }
+
+    .rpm-number.limiter-hit {
+      color: #ff1744;
+      text-shadow: 0 0 16px rgba(255, 23, 68, 0.9);
+      animation: revVibe 0.06s infinite alternate;
+    }
+
+    @keyframes revVibe {
+      0% { transform: scale(1.0); }
+      100% { transform: scale(1.04); }
+    }
+
+    .rpm-unit {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-top: 3px;
+    }
+
+    .gear-box {
+      margin-top: 6px;
+      font-size: 15px;
+      font-weight: 800;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      padding: 2px 14px;
+      border-radius: 6px;
+      display: inline-block;
+      color: var(--accent-orange);
+    }
+
+    .gear-box.locked {
+      border-color: #ff1744;
+      color: #ff5252;
+      box-shadow: 0 0 8px rgba(255, 23, 68, 0.4);
+    }
+
+    .speed-tag {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-family: monospace;
+    }
+
+    /* 踏板指示条 */
+    .pedal-box {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    .pedal-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .pedal-slider {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #ff1744 0%, #21262d 48%, #21262d 52%, #00e5ff 100%);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .pedal-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+
+    /* 按键提示与状态 */
+    .key-hint-box {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .key-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .key-cap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 6px;
+      background: #21262d;
+      border: 2px solid #30363d;
+      border-bottom-width: 3px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 12px;
+      color: #ffffff;
+      transition: all 0.08s;
+    }
+
+    .key-cap.pressed {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      background: var(--accent-cyan);
+      color: #0d1117;
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+    }
+
+    .key-cap.shift-pressed {
+      background: #ff1744;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(255, 23, 68, 0.8);
+    }
+
+    .key-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+    .key-desc strong {
+      color: #ffffff;
+      display: block;
+    }
+
+    /* 控制行 */
+    .control-row {
+      margin-bottom: 12px;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--text-main);
+    }
+
+    .control-label span.val {
+      font-family: monospace;
+      color: var(--accent-cyan);
+    }
+
+    .slider-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #21262d;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(0, 229, 255, 0.7);
+    }
+
+    .num-input {
+      width: 75px;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 3px 6px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #ffffff;
+      text-align: right;
+      outline: none;
+    }
+
+    .num-input:focus {
+      border-color: var(--border-focus);
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .option-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .option-item label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    select {
+      background: #21262d;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    /* 独立换挡开关组 */
+    .switch-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .switch-btn {
+      flex: 1;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--card-inner);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s;
+    }
+
+    .switch-btn.active {
+      border-color: #00ff88;
+      color: #00ff88;
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .switch-btn.inactive {
+      border-color: #30363d;
+      color: #8b949e;
+      background: #161b22;
+    }
+
+    /* 示波器 */
+    canvas {
+      width: 100%;
+      height: 60px;
+      background: #090d13;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      display: block;
+      margin-top: 10px;
+    }
+
+    /* 切片监视区 */
+    .slice-monitor {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(62px, 1fr));
+      gap: 4px;
+      margin-top: 6px;
+      max-height: 100px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .slice-pill {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 4px 2px;
+      text-align: center;
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .slice-pill:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .slice-pill.active {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 229, 255, 0.15);
+      color: #ffffff;
+      font-weight: bold;
+      box-shadow: 0 0 6px rgba(0, 229, 255, 0.4);
+    }
+
+    .slice-pill .weight-bar {
+      height: 3px;
+      background: var(--accent-cyan);
+      border-radius: 2px;
+      margin-top: 2px;
+      width: 0%;
+      transition: width 0.05s;
+    }
+
+    /* 按钮组 */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 105px;
+      background: #21262d;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn:hover {
+      background: #30363d;
+      border-color: var(--accent-cyan);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, #0091ea, #00b0ff);
+      border-color: #00b0ff;
+      color: #ffffff;
+    }
+    .btn.primary:hover {
+      box-shadow: 0 0 12px rgba(0, 176, 255, 0.6);
+    }
+
+    .btn.active {
+      background: rgba(0, 229, 255, 0.2);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+
+    .tab-bar {
+      display: flex;
+      background: var(--card-inner);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+      background: #21262d;
+      color: var(--accent-cyan);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .tech-details {
+      background: var(--card-inner);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #8b949e;
+      margin-top: 10px;
+    }
+    .tech-details strong {
+      color: #58a6ff;
+    }
+
+    .pop-flash {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-orange);
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+    .pop-flash.fire {
+      opacity: 1;
+      box-shadow: 0 0 12px var(--accent-orange);
+    }
+
+    .status-ticker {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+      margin-top: 6px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Rocket League · Human Voice 声浪实验室 (V4 常驻零爆音架构)</h1>
+    <p>全切片预载常驻循环 (彻底杜绝动态开停爆音) · 采样级平滑滤波 · 纯净怠速单播 · 10挡指数衰减升挡</p>
+  </header>
+
+  <div class="notice-bar" id="corsNotice">
+    <div>
+      ⚠️ <strong>若受浏览器本地跨域限制未自动发声：</strong><br>
+      请点击右侧按钮选择包含音频的 <code>audio</code> 目录，或使用本地 http.server 启动。
+    </div>
+    <label class="btn" style="flex: 0 0 auto; cursor: pointer;">
+      📁 选入 audio 文件夹
+      <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
+    </label>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- 左侧：驾驶舱仪表与踏板操作 -->
+    <div class="panel">
+      <h2>
+        仪表盘 & 动力踏板
+        <span class="badge" id="engineStatusBadge">STANDBY</span>
+      </h2>
+      <div class="pop-flash" id="popFlash"></div>
+
+      <div class="dashboard-center">
+        <div class="gauge-wrapper">
+          <svg class="gauge-svg" viewBox="0 0 240 240">
+            <path d="M 36 174 A 92 92 0 1 1 204 174" fill="none" stroke="#21262d" stroke-width="12" stroke-linecap="round"/>
+            <path id="gaugeArc" d="M 36 174 A 92 92 0 1 1 204 174" fill="none" stroke="url(#arcGradient)" stroke-width="12" stroke-linecap="round" stroke-dasharray="430" stroke-dashoffset="430"/>
+            <path d="M 178 65 A 92 92 0 0 1 204 174" fill="none" stroke="rgba(255, 23, 68, 0.45)" stroke-width="5"/>
+
+            <defs>
+              <linearGradient id="arcGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#00e5ff" />
+                <stop offset="60%" stop-color="#00ff88" />
+                <stop offset="85%" stop-color="#ff9100" />
+                <stop offset="100%" stop-color="#ff1744" />
+              </linearGradient>
+            </defs>
+
+            <text x="45" y="180" fill="#8b949e" font-size="10" font-family="monospace">1</text>
+            <text x="32" y="120" fill="#8b949e" font-size="10" font-family="monospace">2</text>
+            <text x="70" y="58" fill="#8b949e" font-size="10" font-family="monospace">3</text>
+            <text x="120" y="42" fill="#8b949e" font-size="10" font-family="monospace">4</text>
+            <text x="170" y="58" fill="#8b949e" font-size="10" font-family="monospace">5</text>
+            <text x="204" y="120" fill="#ff5252" font-size="10" font-family="monospace">6</text>
+
+            <g class="needle" id="gaugeNeedle" style="transform: rotate(-120deg);">
+              <polygon points="120,24 116,120 124,120" fill="#ff1744" />
+              <circle cx="120" cy="120" r="9" fill="#21262d" stroke="#ff1744" stroke-width="2"/>
+            </g>
+          </svg>
+
+          <div class="rpm-display">
+            <div class="rpm-number" id="rpmText">900</div>
+            <div class="rpm-unit">RPM</div>
+            <div class="gear-box" id="gearText">1 挡</div>
+            <div class="speed-tag" id="speedText">0 km/h</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 线性单踏板滑动条 (可持久定速巡航，W/S按键优先瞬时100%) -->
+      <div class="pedal-box">
+        <div class="pedal-header">
+          <span style="color: #ff5252;">◀ 刹车制动 (-100%)</span>
+          <span id="pedalStatusText" style="color: var(--accent-cyan); font-family: monospace;">0% (空挡滑行)</span>
+          <span style="color: var(--accent-cyan);">油门开度 (+100%) ▶</span>
+        </div>
+        <input type="range" class="pedal-slider" id="pedalSlider" min="-100" max="100" step="1" value="0">
+      </div>
+
+      <!-- 独立双换挡开关：自动升挡(默认开) + 自动降挡(默认关) -->
+      <div class="switch-row">
+        <div class="switch-btn active" id="btnAutoUpshift" onclick="toggleUpshiftSwitch()">
+          <span>自动升挡 (Auto Upshift)</span>
+          <span id="txtAutoUpshift">ON</span>
+        </div>
+        <div class="switch-btn inactive" id="btnAutoDownshift" onclick="toggleDownshiftSwitch()">
+          <span>自动降挡 (Auto Downshift)</span>
+          <span id="txtAutoDownshift">OFF</span>
+        </div>
+      </div>
+
+      <!-- 按键监听与锁挡指示 -->
+      <div class="key-hint-box">
+        <div class="key-indicator">
+          <div class="key-cap" id="keyW">W</div>
+          <div class="key-desc">
+            <strong>即时100%油门</strong>松开归0
+          </div>
+        </div>
+        <div class="key-indicator">
+          <div class="key-cap" id="keyS">S</div>
+          <div class="key-desc">
+            <strong>即时100%刹车</strong>松开归0
+          </div>
+        </div>
+        <div class="key-indicator">
+          <div class="key-cap" id="keyShift">Shift / Z</div>
+          <div class="key-desc">
+            <strong>长按锁挡</strong>红线断油
+          </div>
+        </div>
+      </div>
+
+      <!-- 实时音频示波器 -->
+      <canvas id="scopeCanvas" width="420" height="60"></canvas>
+
+      <div class="status-ticker">
+        <span id="limiterStatus">断油保护: 待机</span>
+        <span id="popStatus">回火放炮: 就绪 (≥3500RPM收油触发)</span>
+      </div>
+    </div>
+
+    <!-- 右侧：声浪算法与精确参数控制台 -->
+    <div class="panel">
+      <h2>
+        声浪参数与算法控制台
+        <span class="badge" id="sliceCountBadge">常驻循环矩阵已就绪</span>
+      </h2>
+
+      <!-- 试听模式切换 -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="modeGranularBtn" onclick="setMode('granular')">1. REV 颗粒插值循环 (常驻零爆音)</button>
+        <button class="tab-btn" id="modeRampBtn" onclick="setMode('ramp')">2. 10s 连续原声扫频</button>
+        <button class="tab-btn" id="modeInspectBtn" onclick="setMode('inspector')">3. 原声切片单点巡检</button>
+      </div>
+
+      <!-- 【终极解决爆音】：采样级增益平滑滤波时间常数 -->
+      <div class="control-row" style="background: rgba(0, 229, 255, 0.05); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(0, 229, 255, 0.2);">
+        <div class="control-label">
+          <span style="color: var(--accent-cyan); font-weight: 700;">★ 增益平滑时间常数 (Gain Smoothing Filter Constant)</span>
+          <span class="val" id="smoothTimeVal">15 ms (硬件级平滑滤波)</span>
+        </div>
+        <div class="slider-input-group">
+          <input type="range" id="smoothTimeSlider" min="1" max="50" step="1" value="15">
+          <input type="number" class="num-input" id="smoothTimeInput" min="1" max="100" value="15">
+          <span style="font-size: 11px; color: var(--accent-cyan); font-weight: bold;">ms</span>
+        </div>
+      </div>
+
+      <!-- 发动机转速手动滑块与精准输入 -->
+      <div class="control-row">
+        <div class="control-label">
+          <span>发动机转速 (Engine RPM)</span>
+          <span class="val" id="rpmSliderVal">900 RPM (48.0 Hz)</span>
+        </div>
+        <div class="slider-input-group">
+          <input type="range" id="rpmSlider" min="900" max="6000" step="10" value="900">
+          <input type="number" class="num-input" id="rpmInput" min="500" max="8000" value="900">
+          <span style="font-size: 11px; color: var(--text-muted);">RPM</span>
+        </div>
+      </div>
+
+      <!-- 转速下降速率 (恒定线性) -->
+      <div class="control-row">
+        <div class="control-label">
+          <span>转速下降速率 (RPM Drop Rate - 恒定线性)</span>
+          <span class="val" id="dropRateVal">3000 RPM/s</span>
+        </div>
+        <div class="slider-input-group">
+          <input type="range" id="dropRateSlider" min="500" max="8000" step="100" value="3000">
+          <input type="number" class="num-input" id="dropRateInput" min="500" max="10000" value="3000">
+          <span style="font-size: 11px; color: var(--text-muted);">RPM/s</span>
+        </div>
+      </div>
+
+      <!-- 基准转速上涨加速度 (实际各挡位将根据齿轮比指数衰减) -->
+      <div class="control-row">
+        <div class="control-label">
+          <span>1挡基准转速上涨加速度 (Base Accel Rate)</span>
+          <span class="val" id="accelRateVal">3500 RPM/s</span>
+        </div>
+        <div class="slider-input-group">
+          <input type="range" id="accelRateSlider" min="500" max="10000" step="100" value="3500">
+          <input type="number" class="num-input" id="accelRateInput" min="500" max="15000" value="3500">
+          <span style="font-size: 11px; color: var(--text-muted);">RPM/s</span>
+        </div>
+      </div>
+
+      <!-- 音量控制 -->
+      <div class="control-row">
+        <div class="control-label">
+          <span>主输出音量 (Master Volume)</span>
+          <span class="val" id="volSliderVal">80 %</span>
+        </div>
+        <input type="range" id="volSlider" min="0" max="100" step="1" value="80">
+      </div>
+
+      <!-- 核心控制按钮 -->
+      <div class="btn-row">
+        <button class="btn primary" id="startBtn" onclick="toggleEngine()">
+          <span id="startBtnIcon">▶</span> <span id="startBtnText">启动发动机</span>
+        </button>
+        <button class="btn" id="popManualBtn" onclick="triggerPopSFX(true)">
+          💥 手动回火放炮 (去重4选1)
+        </button>
+      </div>
+
+      <!-- 算法选项对照网格 -->
+      <div class="options-grid">
+        <div class="option-item">
+          <label>交叉淡化曲线 (Crossfade Curve)</label>
+          <select id="curveSelect" onchange="onCurveChange()">
+            <option value="equal-sine" selected>等功率余弦正弦 (Equal-Power Sine/Cosine)</option>
+            <option value="linear">线性直接加权 (Linear Fade)</option>
+            <option value="sqrt">平方根等功率 (Square-Root)</option>
+          </select>
+        </div>
+
+        <div class="option-item">
+          <label>收油减速模拟 (Decel / Off-Load)</label>
+          <select id="decelModeSelect" onchange="onDecelModeChange()">
+            <option value="reverse-filter" selected>反向切片 + 动态低通 (REV官方标准)</option>
+            <option value="filter-only">纯低通滤波弱化 (正向样本)</option>
+            <option value="none">纯油门衰减 (不作收油特殊处理)</option>
+          </select>
+        </div>
+
+        <div class="option-item">
+          <label>同频去相关微延迟 (默认0ms)</label>
+          <select id="decorrSelect" onchange="onDecorrChange()">
+            <option value="0" selected>0 ms (默认关闭，纯净无人工延迟)</option>
+            <option value="7">+7 ms 微延迟 (经典梳状滤波补偿)</option>
+            <option value="-1">相位反转 180° (Negative Invert Phase)</option>
+          </select>
+        </div>
+
+        <div class="option-item">
+          <label>音响输出声道与空间模式</label>
+          <div style="font-size: 11px; color: var(--text-muted); padding-top: 4px;">48kHz 立体声硬件直通</div>
+        </div>
+      </div>
+
+      <!-- 真实车辆动力学与变速箱高级调校 -->
+      <div style="margin-top: 14px; background: var(--card-inner); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--accent-orange); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <span>🏎️ 真实车辆动力学与变速箱高级调校</span>
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">断油回弹 / 升挡回落 / 齿轮阻力衰减</span>
+        </div>
+
+        <!-- 红线断油触发转速 -->
+        <div class="control-row">
+          <div class="control-label">
+            <span>红线断油转速 (Rev-Limit Cutoff RPM)</span>
+            <span class="val" id="revCutoffVal">5980 RPM</span>
+          </div>
+          <div class="slider-input-group">
+            <input type="range" id="revCutoffSlider" min="4500" max="6500" step="50" value="5980">
+            <input type="number" class="num-input" id="revCutoffInput" min="4000" max="7000" value="5980">
+            <span style="font-size: 11px; color: var(--text-muted);">RPM</span>
+          </div>
+        </div>
+
+        <!-- 断油回弹深度 (跌落转速) -->
+        <div class="control-row">
+          <div class="control-label">
+            <span>断油回弹跌落深度 (Bounce Drop Range - 锁挡跳动区间)</span>
+            <span class="val" id="bounceDropVal">300 RPM (回退至 5680 RPM)</span>
+          </div>
+          <div class="slider-input-group">
+            <input type="range" id="bounceDropSlider" min="50" max="1500" step="50" value="300">
+            <input type="number" class="num-input" id="bounceDropInput" min="20" max="2500" value="300">
+            <span style="font-size: 11px; color: var(--text-muted);">RPM</span>
+          </div>
+        </div>
+
+        <!-- 断油跳动周期 (切断持续周期) -->
+        <div class="control-row">
+          <div class="control-label">
+            <span>断油跳动周期 (Bounce Cut Period - 哒哒哒节奏)</span>
+            <span class="val" id="bounceDutyVal">0.08 s (高频硬切 Hard-Cut)</span>
+          </div>
+          <div class="slider-input-group">
+            <input type="range" id="bounceDutySlider" min="0.02" max="0.30" step="0.01" value="0.08">
+            <input type="number" class="num-input" id="bounceDutyInput" min="0.01" max="0.50" step="0.01" value="0.08">
+            <span style="font-size: 11px; color: var(--text-muted);">秒</span>
+          </div>
+        </div>
+
+        <!-- 升挡回落目标转速 -->
+        <div class="control-row">
+          <div class="control-label">
+            <span>升挡回落目标转速 (Upshift Landing RPM)</span>
+            <span class="val" id="upshiftDropVal">3300 RPM</span>
+          </div>
+          <div class="slider-input-group">
+            <input type="range" id="upshiftDropSlider" min="1500" max="5000" step="50" value="3300">
+            <input type="number" class="num-input" id="upshiftDropInput" min="1000" max="5500" value="3300">
+            <span style="font-size: 11px; color: var(--text-muted);">RPM</span>
+          </div>
+        </div>
+
+        <!-- 最大挡位数与高挡阻力衰减基数 -->
+        <div class="options-grid" style="margin-top: 0; padding: 0; border: none; background: transparent;">
+          <div class="option-item">
+            <label>最大挡位数上限 (支持任意正整数)</label>
+            <div style="display: flex; gap: 6px;">
+              <select id="maxGearsSelect" onchange="onMaxGearsSelectChange()" style="flex: 1;">
+                <option value="5">5 挡 (拉力赛车)</option>
+                <option value="6">6 挡 (常规超跑)</option>
+                <option value="10" selected>10 挡 (长齿比指数衰减)</option>
+                <option value="20">20 挡 (挑战长久巡航)</option>
+                <option value="99">99 挡 (无上限挡位)</option>
+                <option value="custom">自定义输入...</option>
+              </select>
+              <input type="number" class="num-input" id="maxGearsCustomInput" min="1" max="99" value="10" style="width: 55px;" onchange="onMaxGearsCustomChange(this.value)">
+            </div>
+          </div>
+
+          <div class="option-item">
+            <label>高挡位阻力衰减系数 (越小高挡越慢)</label>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="range" id="gearDecaySlider" min="0.40" max="0.98" step="0.02" value="0.72" style="flex: 1;">
+              <span id="gearDecayVal" style="font-family: monospace; color: var(--accent-orange); font-size: 12px; width: 42px;">0.72</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 飞轮转动惯量与放炮触发门槛 -->
+        <div class="options-grid" style="margin-top: 8px; padding: 0; border: none; background: transparent;">
+          <div class="option-item">
+            <label>飞轮转动惯量 / 转速跟手敏捷度</label>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="range" id="flywheelSlider" min="5" max="45" step="1" value="18" style="flex: 1;">
+              <span id="flywheelVal" style="font-family: monospace; color: var(--accent-cyan); font-size: 12px; width: 42px;">18.0</span>
+            </div>
+          </div>
+
+          <div class="option-item">
+            <label>回火放炮最低转速门槛 (收油触发)</label>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="range" id="popRPMThresholdSlider" min="1500" max="5500" step="100" value="3500" style="flex: 1;">
+              <span id="popRPMThresholdVal" style="font-family: monospace; color: #ff5252; font-size: 12px; width: 55px;">3500</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 活跃切片混音指示 -->
+      <div class="control-label" style="margin-top: 10px; margin-bottom: 4px;">
+        <span>活跃声源指示 (Active Voice Monitor)</span>
+        <span class="val" id="activeSliceText">未启动</span>
+      </div>
+      <div class="slice-monitor" id="sliceMonitor"></div>
+
+      <div class="tech-details" id="techDetails">
+        <strong>[V4 常驻零爆音架构突破]</strong><br>
+        • <strong>根本症结破解</strong>：此前爆音的物理根源是“跨界时动态创建新 AudioNode 并从第 0 个样点强行插入”，造成瞬间波形阶跃！<br>
+        • <strong>常驻 Voice 矩阵</strong>：全部 19 个切片在点击启动时<strong>一次性全部进入无缝循环</strong>，运行中<strong>永不再创建/销毁节点，永不再调用 start()/stop()</strong>！只通过采样精度的 <code>setTargetAtTime</code> 调节音量，物理上彻底杜绝任何音频阶跃爆音！
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. 全局配置与状态定义
+    // ==========================================
+    let audioCtx = null;
+    let masterGain = null;
+    let analyserNode = null;
+    let lowpassNode = null;
+
+    let currentMode = 'granular';
+    let isRunning = false;
+
+    // 独立换挡开关：默认开启自动升挡，关闭自动降挡
+    let autoUpshiftEnabled = true;
+    let autoDownshiftEnabled = false;
+    let maxGears = 10;
+
+    // 参数设置
+    let gainSmoothingTimeMs = 15; // 15ms 一阶滤波时间常数，零突变零阶跃
+    let rpmDropRate = 3000;       // 3000 RPM/s 恒定线性转速下降速率
+    let baseAccelRiseRate = 3500; // 3500 RPM/s 基准转速上升速率 (1挡)
+    let crossfadeCurveType = 'equal-sine';
+    let decelMode = 'reverse-filter';
+    let decorrelationDelayMs = 0; // 默认 0ms 关闭人工延迟
+
+    // 驾驶物理状态
+    let engineRPM = 900;
+    let targetRPM = 900;
+    let throttleLoad = 0.0; // 0.0 ~ 1.0
+    let brakeForce = 0.0;   // 0.0 ~ 1.0
+    let sliderPedalVal = 0; // 滑块保存的持久巡航值 (-100 ~ +100)
+    let carSpeed = 0.0;     // km/h
+    let currentGear = 1;    // 1 ~ 10
+
+    // 10 挡齿轮传动比与阻力衰减参数
+    const GEAR_RATIOS_10 = [3.8, 2.6, 1.9, 1.4, 1.05, 0.82, 0.65, 0.52, 0.42, 0.34];
+
+    // 【新增真实车辆动力学高级调校参数】
+    let revLimitCutoffRPM = 5980;         // 红线断油触发转速 (RPM)
+    let revLimiterBounceDrop = 300;       // 断油回退跌落深度 (RPM)
+    let revLimiterBounceDuration = 0.08;   // 断油跳动切油持续周期 (s)
+    let upshiftLandingRPM = 3300;         // 升挡回落目标转速 (RPM)
+    let gearDecayFactorBase = 0.72;       // 高挡位阻力指数衰减基数
+    let flywheelAgility = 18.0;           // 飞轮转动惯量 / 转速跟手敏捷度
+    let backfireTriggerRPM = 3500;        // 回火放炮最低转速门槛 (RPM)
+
+    function getGearRatio(gear) {
+      if (gear <= 10) return GEAR_RATIOS_10[gear - 1];
+      return Math.max(0.15, GEAR_RATIOS_10[9] * Math.pow(0.85, gear - 10));
+    }
+
+    // 按键状态
+    let keyWDown = false;
+    let keySDown = false;
+    let keyShiftDown = false;
+    let isRevLimiting = false;
+    let revLimiterDropTimer = 0;
+
+    // 智能放炮检测
+    let lastRPMForPop = 900;
+    let lastThrottleForPop = 0;
+    let lastPopIndex = -1;
+
+    // 19 个原声音频切片元数据
+    const SLICE_METAS = [
+      { id: 0, freq: 48.00, cycles: 28, onFile: "audio/slices/slice_00_48.0hz.wav", offFile: "audio/slices/slice_00_48.0hz_off.wav" },
+      { id: 1, freq: 50.42, cycles: 30, onFile: "audio/slices/slice_01_50.4hz.wav", offFile: "audio/slices/slice_01_50.4hz_off.wav" },
+      { id: 2, freq: 55.62, cycles: 33, onFile: "audio/slices/slice_02_55.6hz.wav", offFile: "audio/slices/slice_02_55.6hz_off.wav" },
+      { id: 3, freq: 60.15, cycles: 36, onFile: "audio/slices/slice_03_60.2hz.wav", offFile: "audio/slices/slice_03_60.2hz_off.wav" },
+      { id: 4, freq: 64.43, cycles: 38, onFile: "audio/slices/slice_04_64.4hz.wav", offFile: "audio/slices/slice_04_64.4hz_off.wav" },
+      { id: 5, freq: 68.18, cycles: 40, onFile: "audio/slices/slice_05_68.2hz.wav", offFile: "audio/slices/slice_05_68.2hz_off.wav" },
+      { id: 6, freq: 72.07, cycles: 43, onFile: "audio/slices/slice_06_72.1hz.wav", offFile: "audio/slices/slice_06_72.1hz_off.wav" },
+      { id: 7, freq: 77.05, cycles: 46, onFile: "audio/slices/slice_07_77.0hz.wav", offFile: "audio/slices/slice_07_77.0hz_off.wav" },
+      { id: 8, freq: 81.49, cycles: 48, onFile: "audio/slices/slice_08_81.5hz.wav", offFile: "audio/slices/slice_08_81.5hz_off.wav" },
+      { id: 9, freq: 84.36, cycles: 50, onFile: "audio/slices/slice_09_84.4hz.wav", offFile: "audio/slices/slice_09_84.4hz_off.wav" },
+      { id: 10, freq: 89.05, cycles: 53, onFile: "audio/slices/slice_10_89.1hz.wav", offFile: "audio/slices/slice_10_89.1hz_off.wav" },
+      { id: 11, freq: 93.39, cycles: 56, onFile: "audio/slices/slice_11_93.4hz.wav", offFile: "audio/slices/slice_11_93.4hz_off.wav" },
+      { id: 12, freq: 96.58, cycles: 57, onFile: "audio/slices/slice_12_96.6hz.wav", offFile: "audio/slices/slice_12_96.6hz_off.wav" },
+      { id: 13, freq: 98.16, cycles: 58, onFile: "audio/slices/slice_13_98.2hz.wav", offFile: "audio/slices/slice_13_98.2hz_off.wav" },
+      { id: 14, freq: 104.12, cycles: 62, onFile: "audio/slices/slice_14_104.1hz.wav", offFile: "audio/slices/slice_14_104.1hz_off.wav" },
+      { id: 15, freq: 107.62, cycles: 64, onFile: "audio/slices/slice_15_107.6hz.wav", offFile: "audio/slices/slice_15_107.6hz_off.wav" },
+      { id: 16, freq: 115.11, cycles: 69, onFile: "audio/slices/slice_16_115.1hz.wav", offFile: "audio/slices/slice_16_115.1hz_off.wav" },
+      { id: 17, freq: 122.14, cycles: 73, onFile: "audio/slices/slice_17_122.1hz.wav", offFile: "audio/slices/slice_17_122.1hz_off.wav" },
+      { id: 18, freq: 132.60, cycles: 79, onFile: "audio/slices/slice_18_132.6hz.wav", offFile: "audio/slices/slice_18_132.6hz_off.wav" }
+    ];
+
+    SLICE_METAS.forEach((s) => {
+      s.rpm = 900 + (6000 - 900) * ((s.freq - 48.0) / (132.60 - 48.0));
+      s.onBuffer = null;
+      s.offBuffer = null;
+    });
+
+    let rampBuffer = null;
+    let idleBuffer = null;
+    let popBuffers = [];
+
+    // ==========================================
+    // 2. 音频环境与资源加载
+    // ==========================================
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext({ sampleRate: 48000 });
+
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+
+        lowpassNode = audioCtx.createBiquadFilter();
+        lowpassNode.type = 'lowpass';
+        lowpassNode.frequency.setValueAtTime(16000, audioCtx.currentTime);
+        lowpassNode.Q.setValueAtTime(1.0, audioCtx.currentTime);
+
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 256;
+
+        lowpassNode.connect(masterGain);
+        masterGain.connect(analyserNode);
+        analyserNode.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    async function loadAudioBuffer(urlOrFile) {
+      if (urlOrFile instanceof File) {
+        const arrayBuf = await urlOrFile.arrayBuffer();
+        return await audioCtx.decodeAudioData(arrayBuf);
+      } else {
+        const res = await fetch(urlOrFile);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const arrayBuf = await res.arrayBuffer();
+        return await audioCtx.decodeAudioData(arrayBuf);
+      }
+    }
+
+    async function loadAllAudioDefault() {
+      initAudioContext();
+      try {
+        const slicePromises = SLICE_METAS.map(async (s) => {
+          s.onBuffer = await loadAudioBuffer(s.onFile);
+          s.offBuffer = await loadAudioBuffer(s.offFile);
+        });
+
+        const rampPromise = loadAudioBuffer("audio/full/accel_ramp_10s.wav").then(b => rampBuffer = b);
+        const idlePromise = loadAudioBuffer("audio/full/idle_loop_4.8s.wav").then(b => idleBuffer = b).catch(() => {});
+        const popPromises = [1, 2, 3, 4].map((id, idx) => {
+          return loadAudioBuffer(`audio/sfx/pop_0${id}.wav`).then(b => popBuffers[idx] = b);
+        });
+
+        await Promise.all([...slicePromises, rampPromise, idlePromise, ...popPromises]);
+        document.getElementById('engineStatusBadge').textContent = "READY";
+      } catch (err) {
+        console.warn("相对路径加载提示:", err);
+        document.getElementById('corsNotice').classList.add('active');
+      }
+    }
+
+    document.getElementById('folderInput').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files.length) return;
+      initAudioContext();
+
+      const fileMap = {};
+      files.forEach(f => fileMap[f.name] = f);
+
+      // 【核心增强】：优先解析导入文件夹内的 metadata.json
+      if (fileMap['metadata.json']) {
+        try {
+          const metaText = await fileMap['metadata.json'].text();
+          const metaJson = JSON.parse(metaText);
+          if (metaJson.vehicle) {
+            const h1 = document.querySelector('header h1');
+            if (h1) h1.textContent = `${metaJson.vehicle} · 声浪高保真控制台`;
+          }
+          if (metaJson.slices && metaJson.slices.length > 0) {
+            SLICE_METAS.length = 0;
+            const minFreq = metaJson.freq_range ? metaJson.freq_range[0] : metaJson.slices[0].freq;
+            const maxFreq = metaJson.freq_range ? metaJson.freq_range[1] : metaJson.slices[metaJson.slices.length - 1].freq;
+            const minRPM = metaJson.rpm_range ? metaJson.rpm_range[0] : 900;
+            const maxRPM = metaJson.rpm_range ? metaJson.rpm_range[1] : 6000;
+
+            metaJson.slices.forEach(s => {
+              SLICE_METAS.push({
+                id: s.index,
+                freq: s.freq,
+                cycles: s.cycles,
+                onFile: s.on_file,
+                offFile: s.off_file,
+                rpm: minRPM + (maxRPM - minRPM) * ((s.freq - minFreq) / (maxFreq - minFreq)),
+                onBuffer: null,
+                offBuffer: null
+              });
+            });
+            buildSliceMonitorElements();
+          }
+        } catch (err) {
+          console.warn("解析 metadata.json 警告:", err);
+        }
+      }
+
+      let count = 0;
+      for (const s of SLICE_METAS) {
+        const onName = s.onFile.split('/').pop();
+        const offName = s.offFile.split('/').pop();
+        if (fileMap[onName]) { s.onBuffer = await loadAudioBuffer(fileMap[onName]); count++; }
+        if (fileMap[offName]) { s.offBuffer = await loadAudioBuffer(fileMap[offName]); count++; }
+      }
+      if (fileMap["accel_ramp_10s.wav"]) rampBuffer = await loadAudioBuffer(fileMap["accel_ramp_10s.wav"]);
+      if (fileMap["idle_loop_4.8s.wav"]) idleBuffer = await loadAudioBuffer(fileMap["idle_loop_4.8s.wav"]);
+      for (let i = 1; i <= 4; i++) {
+        const pName = `pop_0${i}.wav`;
+        if (fileMap[pName]) popBuffers[i - 1] = await loadAudioBuffer(fileMap[pName]);
+      }
+
+      document.getElementById('corsNotice').classList.remove('active');
+      document.getElementById('engineStatusBadge').textContent = "READY";
+      alert(`已成功解析并载入 ${count} 个切片和原声音频！`);
+    });
+
+    // ==========================================
+    // 3. 【终极解决方案】：常驻全切片循环矩阵 (零节点创建/销毁，物理级绝对零爆音)
+    // ==========================================
+    class PreAllocatedREVMatrixSynthesizer {
+      constructor() {
+        this.voices = [];          // 19 个常驻 Voice 对象
+        this.idleVoice = null;     // 原声怠速循环常驻通道
+        this.idleGain = null;
+        this.slicesMasterGain = null; // 切片总控增益
+        this.decorrelationDelay = null;
+        this.inverterGain = null;
+      }
+
+      start() {
+        if (!audioCtx) initAudioContext();
+        this.stop();
+
+        this.slicesMasterGain = audioCtx.createGain();
+        this.slicesMasterGain.gain.setValueAtTime(0.0, audioCtx.currentTime); // 怠速时初始静音
+        this.slicesMasterGain.connect(lowpassNode);
+
+        // 去相关节点链
+        this.decorrelationDelay = audioCtx.createDelay();
+        this.inverterGain = audioCtx.createGain();
+        this.updateDecorrNodes();
+
+        this.decorrelationDelay.connect(this.inverterGain);
+        this.inverterGain.connect(this.slicesMasterGain);
+
+        // 启动原声怠速循环通道 (idle_loop_4.8s.wav)
+        if (idleBuffer) {
+          const iSrc = audioCtx.createBufferSource();
+          iSrc.buffer = idleBuffer;
+          iSrc.loop = true;
+          this.idleGain = audioCtx.createGain();
+          this.idleGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+          iSrc.connect(this.idleGain).connect(lowpassNode);
+          iSrc.start(0);
+          this.idleVoice = iSrc;
+        }
+
+        // 【核心创新】：在发动机启动瞬间，将全部 19 个切片全部 start(0) 并在后台静音循环！
+        // 整个生命周期内永不再调用 start() 或 stop()，物理上杜绝任何 AudioBuffer 阶跃！
+        this.voices = [];
+        const now = audioCtx.currentTime;
+
+        SLICE_METAS.forEach((slice, idx) => {
+          if (!slice.onBuffer || !slice.offBuffer) return;
+
+          // On-load 常驻节点
+          const onSrc = audioCtx.createBufferSource();
+          onSrc.buffer = slice.onBuffer;
+          onSrc.loop = true;
+          const onGain = audioCtx.createGain();
+          onGain.gain.setValueAtTime(0.0, now); // 初始全静音
+          onSrc.connect(onGain).connect(this.slicesMasterGain);
+
+          // Off-load 常驻节点 (连接至去相关链)
+          const offSrc = audioCtx.createBufferSource();
+          offSrc.buffer = (decelMode === 'filter-only' || decelMode === 'none') ? slice.onBuffer : slice.offBuffer;
+          offSrc.loop = true;
+          const offGain = audioCtx.createGain();
+          offGain.gain.setValueAtTime(0.0, now); // 初始全静音
+          offSrc.connect(offGain).connect(this.decorrelationDelay);
+
+          onSrc.start(0);
+          offSrc.start(0);
+
+          this.voices.push({
+            id: idx,
+            meta: slice,
+            onSrc,
+            offSrc,
+            onGain,
+            offGain
+          });
+        });
+      }
+
+      updateDecorrNodes() {
+        if (!audioCtx || !this.decorrelationDelay) return;
+        const now = audioCtx.currentTime;
+        if (decorrelationDelayMs === -1) {
+          this.decorrelationDelay.delayTime.setValueAtTime(0, now);
+          this.inverterGain.gain.setValueAtTime(-1.0, now);
+        } else {
+          this.inverterGain.gain.setValueAtTime(1.0, now);
+          this.decorrelationDelay.delayTime.setValueAtTime(Math.max(0, decorrelationDelayMs / 1000), now);
+        }
+      }
+
+      stop() {
+        // 一次性停掉所有常驻节点
+        for (const v of this.voices) {
+          try {
+            v.onSrc.stop();
+            v.offSrc.stop();
+          } catch(e){}
+        }
+        this.voices = [];
+
+        if (this.idleVoice) {
+          try { this.idleVoice.stop(); } catch(e){}
+          this.idleVoice = null;
+          this.idleGain = null;
+        }
+      }
+
+      update(currentRPM, throttle) {
+        if (this.voices.length === 0) return;
+
+        // 1. 查找当前转速对应的相邻切片区间
+        let lowerIdx = 0;
+        for (let i = 0; i < SLICE_METAS.length - 1; i++) {
+          if (currentRPM >= SLICE_METAS[i].rpm && currentRPM <= SLICE_METAS[i + 1].rpm) {
+            lowerIdx = i;
+            break;
+          }
+        }
+        lowerIdx = Math.min(lowerIdx, SLICE_METAS.length - 2);
+        const upperIdx = lowerIdx + 1;
+
+        const lowerMeta = SLICE_METAS[lowerIdx];
+        const upperMeta = SLICE_METAS[upperIdx];
+
+        // 2. 交叉淡化比例计算
+        const rpmFactor = Math.max(0, Math.min(1, (currentRPM - lowerMeta.rpm) / (upperMeta.rpm - lowerMeta.rpm)));
+        let weightLower = 0;
+        let weightUpper = 0;
+
+        if (crossfadeCurveType === 'equal-sine') {
+          weightLower = Math.cos(rpmFactor * 0.5 * Math.PI);
+          weightUpper = Math.sin(rpmFactor * 0.5 * Math.PI);
+        } else if (crossfadeCurveType === 'linear') {
+          weightLower = 1.0 - rpmFactor;
+          weightUpper = rpmFactor;
+        } else if (crossfadeCurveType === 'sqrt') {
+          weightLower = Math.sqrt(1.0 - rpmFactor);
+          weightUpper = Math.sqrt(rpmFactor);
+        }
+
+        // 负荷 (Throttle / Load) 混音
+        let gainOn = 1.0;
+        let gainOff = 0.0;
+        if (decelMode === 'none') {
+          gainOn = 1.0;
+          gainOff = 0.0;
+        } else {
+          gainOn = Math.sqrt(throttle);
+          gainOff = Math.sqrt(1.0 - throttle);
+        }
+
+        const now = audioCtx.currentTime;
+        const tau = Math.max(0.001, gainSmoothingTimeMs / 1000.0); // 采样级一阶平滑滤波器时间常数
+
+        // 目标声学基频：根据当前 RPM 连续线性映射 (48.0 Hz ~ 132.60 Hz)
+        const targetFreq = 48.0 + (132.60 - 48.0) * Math.max(0, Math.min(1, (currentRPM - 900) / (6000 - 900)));
+
+        // 3. 遍历常驻矩阵：只给当前相邻两个切片赋予目标增益，其余全部平滑衰减归 0！
+        // 绝不创建新节点，绝不销毁节点，绝不调用 start()！
+        for (let i = 0; i < this.voices.length; i++) {
+          const v = this.voices[i];
+
+          // 【声学绝对同频对齐】：发声切片基频精准锁定到 targetFreq，消除近频差拍干涉！
+          const rate = Math.max(0.2, Math.min(8.0, targetFreq / v.meta.freq));
+          v.onSrc.playbackRate.setValueAtTime(rate, now);
+          v.offSrc.playbackRate.setValueAtTime(rate, now);
+
+          let targetOnGain = 0.0;
+          let targetOffGain = 0.0;
+
+          if (i === lowerIdx) {
+            targetOnGain = weightLower * gainOn;
+            targetOffGain = (decelMode === 'none') ? 0.0 : (weightLower * gainOff);
+          } else if (i === upperIdx) {
+            targetOnGain = weightUpper * gainOn;
+            targetOffGain = (decelMode === 'none') ? 0.0 : (weightUpper * gainOff);
+          }
+
+          // 使用 Web Audio 原生采样级一阶低通平滑，消除一切数值突变
+          v.onGain.gain.setTargetAtTime(targetOnGain, now, tau);
+          v.offGain.gain.setTargetAtTime(targetOffGain, now, tau);
+        }
+
+        // 4. 【纯净怠速单播】：怠速时只响 idle_loop，切片总增益归0！
+        if (this.idleGain && this.slicesMasterGain) {
+          if (currentRPM <= 915 && throttle <= 0.02) {
+            this.idleGain.gain.setTargetAtTime(1.0, now, 0.02);
+            this.slicesMasterGain.gain.setTargetAtTime(0.0, now, 0.02);
+          } else if (currentRPM < 1150) {
+            const tFactor = Math.min(1.0, Math.max(0.0, (currentRPM - 915) / 200.0 + throttle * 0.8));
+            this.idleGain.gain.setTargetAtTime(1.0 - tFactor, now, 0.02);
+            this.slicesMasterGain.gain.setTargetAtTime(tFactor, now, 0.02);
+          } else {
+            this.idleGain.gain.setTargetAtTime(0.0, now, 0.02);
+            this.slicesMasterGain.gain.setTargetAtTime(1.0, now, 0.02);
+          }
+        }
+
+        // 5. 动态低通滤波
+        if (decelMode === 'reverse-only' || decelMode === 'none') {
+          lowpassNode.frequency.setValueAtTime(20000, now);
+        } else {
+          const filterCutoff = 1800 + throttle * 15000;
+          lowpassNode.frequency.setValueAtTime(filterCutoff, now);
+        }
+
+        updateSliceMonitorUI(lowerIdx, upperIdx, rpmFactor, currentRPM / lowerMeta.rpm, currentRPM / upperMeta.rpm);
+      }
+    }
+
+    // ==========================================
+    // 4. 10s 完整原声扫频 Ramp 播放引擎
+    // ==========================================
+    class PreAllocatedREVRampPlayer {
+      constructor() {
+        this.source = null;
+        this.gain = null;
+      }
+
+      start() {
+        if (!rampBuffer) return;
+        this.stop();
+        this.source = audioCtx.createBufferSource();
+        this.source.buffer = rampBuffer;
+        this.source.loop = true;
+
+        this.gain = audioCtx.createGain();
+        this.gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+
+        this.source.connect(this.gain).connect(lowpassNode);
+        this.source.start(0);
+      }
+
+      stop() {
+        if (this.source) {
+          try { this.source.stop(); } catch(e){}
+          this.source = null;
+        }
+      }
+
+      update(currentRPM, throttle) {
+        if (!this.source) return;
+        const rate = Math.max(0.3, Math.min(6.0, currentRPM / 2500));
+        this.source.playbackRate.setValueAtTime(rate, audioCtx.currentTime);
+
+        const filterCutoff = 1600 + throttle * 15000;
+        lowpassNode.frequency.setValueAtTime(filterCutoff, audioCtx.currentTime);
+      }
+    }
+
+    const granularSynth = new PreAllocatedREVMatrixSynthesizer();
+    const rampPlayer = new PreAllocatedREVRampPlayer();
+
+    // ==========================================
+    // 5. 智能去重回火放炮 (Pop SFX)
+    // ==========================================
+    function triggerPopSFX(force = false) {
+      if (!audioCtx || popBuffers.length === 0) return;
+
+      let chosenIdx = 0;
+      do {
+        chosenIdx = Math.floor(Math.random() * popBuffers.length);
+      } while (chosenIdx === lastPopIndex && popBuffers.length > 1);
+
+      lastPopIndex = chosenIdx;
+      const buf = popBuffers[chosenIdx];
+      if (!buf) return;
+
+      const pSrc = audioCtx.createBufferSource();
+      pSrc.buffer = buf;
+      pSrc.playbackRate.value = 0.95 + Math.random() * 0.1;
+
+      const pGain = audioCtx.createGain();
+      pGain.gain.value = 0.95;
+
+      pSrc.connect(pGain).connect(masterGain);
+      pSrc.start(0);
+
+      const flash = document.getElementById('popFlash');
+      flash.classList.add('fire');
+      setTimeout(() => flash.classList.remove('fire'), 150);
+
+      document.getElementById('popStatus').textContent = `回火放炮: 触发 pop_0${chosenIdx+1}.wav`;
+    }
+
+    // ==========================================
+    // 6. 车辆物理引擎 (10挡指数衰减升挡与双轨油门)
+    // ==========================================
+    let lastTime = performance.now();
+
+    function physicsLoop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+      lastTime = timestamp;
+
+      if (isRunning) {
+        // 双轨油门：按键 W 瞬间 100%，按键 S 瞬间 -100%，松开则持续按照滑块定速巡航
+        let effectivePedal = 0;
+        if (keyWDown) {
+          effectivePedal = 100;
+        } else if (keySDown) {
+          effectivePedal = -100;
+        } else {
+          effectivePedal = sliderPedalVal;
+        }
+
+        if (effectivePedal >= 0) {
+          throttleLoad = effectivePedal / 100.0;
+          brakeForce = 0.0;
+        } else {
+          throttleLoad = 0.0;
+          brakeForce = Math.abs(effectivePedal) / 100.0;
+        }
+
+        // 高转速收油放炮检测 (RPM ≥ backfireTriggerRPM 且油门骤降为 0)
+        if (lastRPMForPop >= backfireTriggerRPM && lastThrottleForPop >= 0.25 && throttleLoad <= 0.02) {
+          triggerPopSFX(false);
+        }
+        lastRPMForPop = engineRPM;
+        lastThrottleForPop = throttleLoad;
+
+        // 红线断油回弹
+        if (isRevLimiting) {
+          revLimiterDropTimer -= dt;
+          if (revLimiterDropTimer <= 0) {
+            isRevLimiting = false;
+          }
+        }
+
+        const gearRatio = getGearRatio(currentGear);
+
+        // 挡位加速度衰减因子：高挡位阻力呈指数激增
+        const gearDecayFactor = Math.pow(gearDecayFactorBase, currentGear - 1);
+        const effectiveAccelRate = baseAccelRiseRate * gearDecayFactor;
+
+        if (throttleLoad > 0.02 && !isRevLimiting) {
+          const driveForce = throttleLoad * 260 * gearRatio * gearDecayFactor;
+          carSpeed += (driveForce / 1100) * dt * 3.6;
+
+          targetRPM = Math.min(revLimitCutoffRPM, targetRPM + effectiveAccelRate * throttleLoad * dt);
+
+          const inhibitUpshift = keyShiftDown || !autoUpshiftEnabled;
+          const upshiftThreshold = Math.max(revLimitCutoffRPM - 300, revLimitCutoffRPM * 0.94);
+          if (targetRPM >= upshiftThreshold && currentGear < maxGears && !inhibitUpshift) {
+            currentGear++;
+            triggerPopSFX(false);
+            targetRPM = Math.max(900, Math.min(upshiftThreshold - 200, upshiftLandingRPM));
+          } else if (targetRPM >= (revLimitCutoffRPM - 20) && inhibitUpshift) {
+            isRevLimiting = true;
+            revLimiterDropTimer = revLimiterBounceDuration;
+            targetRPM = Math.max(900, revLimitCutoffRPM - revLimiterBounceDrop);
+            document.getElementById('limiterStatus').textContent = `断油保护: 激活 (${revLimitCutoffRPM} - ${revLimiterBounceDrop} RPM)`;
+          }
+        } else {
+          // 恒定线性转速下降
+          const dropAmount = (rpmDropRate + brakeForce * 2500) * dt;
+          targetRPM = Math.max(900, targetRPM - dropAmount);
+
+          carSpeed = Math.max(0, carSpeed - (dt * 15 + brakeForce * dt * 80));
+
+          if (autoDownshiftEnabled) {
+            if (targetRPM <= 1600 && currentGear > 1) {
+              currentGear--;
+              targetRPM = Math.min(revLimitCutoffRPM - 1000, targetRPM + 900);
+            }
+          } else {
+            // 自动降挡关闭时：停车减速至怠速后强行重置归 1 挡
+            if (targetRPM <= 920 && carSpeed <= 5) {
+              currentGear = 1;
+            }
+          }
+        }
+
+        engineRPM += (targetRPM - engineRPM) * Math.min(1.0, dt * flywheelAgility);
+        if (engineRPM >= (revLimitCutoffRPM - 100) && (keyShiftDown || !autoUpshiftEnabled)) {
+          document.getElementById('rpmText').classList.add('limiter-hit');
+        } else {
+          document.getElementById('rpmText').classList.remove('limiter-hit');
+          if (!isRevLimiting) document.getElementById('limiterStatus').textContent = "断油保护: 待机";
+        }
+
+        if (currentMode === 'granular') {
+          granularSynth.update(engineRPM, throttleLoad);
+        } else if (currentMode === 'ramp') {
+          rampPlayer.update(engineRPM, throttleLoad);
+        }
+
+        updateDashboardUI(effectivePedal);
+      }
+
+      drawScope();
+      requestAnimationFrame(physicsLoop);
+    }
+
+    // ==========================================
+    // 7. UI 渲染与双向绑定
+    // ==========================================
+    function updateDashboardUI(effectivePedal) {
+      const roundedRPM = Math.round(engineRPM);
+      document.getElementById('rpmText').textContent = roundedRPM;
+      document.getElementById('speedText').textContent = Math.round(carSpeed) + " km/h";
+
+      const gearBox = document.getElementById('gearText');
+      gearBox.textContent = currentGear + " 挡";
+      if (keyShiftDown || !autoUpshiftEnabled) gearBox.classList.add('locked');
+      else gearBox.classList.remove('locked');
+
+      const gaugeMax = Math.max(6000, revLimitCutoffRPM);
+      const needleAngle = -120 + (engineRPM / gaugeMax) * 240;
+      document.getElementById('gaugeNeedle').style.transform = `rotate(${needleAngle}deg)`;
+
+      const arcPercent = Math.max(0, Math.min(1, engineRPM / gaugeMax));
+      document.getElementById('gaugeArc').style.strokeDashoffset = 430 - (arcPercent * 300);
+
+      const pText = document.getElementById('pedalStatusText');
+      if (effectivePedal > 0) {
+        pText.textContent = `+${Math.round(effectivePedal)}% (油门加速)`;
+        pText.style.color = 'var(--accent-cyan)';
+      } else if (effectivePedal < 0) {
+        pText.textContent = `${Math.round(effectivePedal)}% (刹车制动)`;
+        pText.style.color = '#ff5252';
+      } else {
+        pText.textContent = `0% (空挡滑行)`;
+        pText.style.color = 'var(--text-muted)';
+      }
+
+      if (document.activeElement !== document.getElementById('rpmSlider') &&
+          document.activeElement !== document.getElementById('rpmInput')) {
+        document.getElementById('rpmSlider').value = roundedRPM;
+        document.getElementById('rpmInput').value = roundedRPM;
+      }
+      const currentFreq = 48.0 + (132.6 - 48.0) * ((engineRPM - 900) / (6000 - 900));
+      document.getElementById('rpmSliderVal').textContent = `${roundedRPM} RPM (${currentFreq.toFixed(1)} Hz)`;
+    }
+
+    function updateSliceMonitorUI(lowerIdx, upperIdx, factor, rLower, rUpper) {
+      const pills = document.querySelectorAll('.slice-pill');
+      const isPureIdle = engineRPM <= 915 && throttleLoad <= 0.02;
+
+      pills.forEach((p, idx) => {
+        const bar = p.querySelector('.weight-bar');
+        if (isPureIdle) {
+          p.classList.remove('active');
+          bar.style.width = '0%';
+        } else if (idx === lowerIdx) {
+          p.classList.add('active');
+          bar.style.width = Math.round((1 - factor) * 100) + '%';
+        } else if (idx === upperIdx) {
+          p.classList.add('active');
+          bar.style.width = Math.round(factor * 100) + '%';
+        } else {
+          p.classList.remove('active');
+          bar.style.width = '0%';
+        }
+      });
+
+      const l = SLICE_METAS[lowerIdx];
+      const u = SLICE_METAS[upperIdx];
+      if (isPureIdle) {
+        document.getElementById('activeSliceText').innerHTML =
+          `<span style="color:#00ff88; font-weight:bold;">[纯净怠速单播] idle_loop_4.8s (无切片叠加)</span>`;
+      } else {
+        document.getElementById('activeSliceText').innerHTML =
+          `#${lowerIdx}(${l.freq}Hz) <b>${Math.round((1-factor)*100)}%</b> + ` +
+          `#${upperIdx}(${u.freq}Hz) <b>${Math.round(factor*100)}%</b>`;
+      }
+    }
+
+    function buildSliceMonitorElements() {
+      const monitor = document.getElementById('sliceMonitor');
+      monitor.innerHTML = '';
+      SLICE_METAS.forEach((s, idx) => {
+        const pill = document.createElement('div');
+        pill.className = 'slice-pill';
+        pill.innerHTML = `
+          <div>#${idx}</div>
+          <div>${s.freq}Hz</div>
+          <div class="weight-bar"></div>
+        `;
+        pill.onclick = () => previewSingleSlice(idx);
+        monitor.appendChild(pill);
+      });
+    }
+
+    function previewSingleSlice(idx) {
+      if (!audioCtx) initAudioContext();
+      const s = SLICE_METAS[idx];
+      if (!s.onBuffer) return;
+
+      const src = audioCtx.createBufferSource();
+      src.buffer = s.onBuffer;
+      src.connect(masterGain);
+      src.start(0);
+
+      const pills = document.querySelectorAll('.slice-pill');
+      pills.forEach(p => p.classList.remove('active'));
+      pills[idx].classList.add('active');
+    }
+
+    const scopeCanvas = document.getElementById('scopeCanvas');
+    const scopeCtx = scopeCanvas.getContext('2d');
+
+    function drawScope() {
+      const width = scopeCanvas.width;
+      const height = scopeCanvas.height;
+
+      scopeCtx.fillStyle = '#090d13';
+      scopeCtx.fillRect(0, 0, width, height);
+
+      scopeCtx.strokeStyle = 'rgba(48, 54, 61, 0.4)';
+      scopeCtx.lineWidth = 1;
+      scopeCtx.beginPath();
+      scopeCtx.moveTo(0, height / 2);
+      scopeCtx.lineTo(width, height / 2);
+      scopeCtx.stroke();
+
+      if (!analyserNode || !isRunning) return;
+
+      const bufferLength = analyserNode.frequencyBinCount;
+      const timeData = new Uint8Array(bufferLength);
+      analyserNode.getByteTimeDomainData(timeData);
+
+      scopeCtx.lineWidth = 2;
+      scopeCtx.strokeStyle = throttleLoad > 0.1 ? '#00e5ff' : '#00ff88';
+      scopeCtx.beginPath();
+
+      const sliceWidth = width / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const v = timeData[i] / 128.0;
+        const y = (v * height) / 2;
+        if (i === 0) scopeCtx.moveTo(x, y);
+        else scopeCtx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      scopeCtx.stroke();
+    }
+
+    // ==========================================
+    // 8. 控件交互与事件监听
+    // ==========================================
+    function toggleEngine() {
+      initAudioContext();
+      isRunning = !isRunning;
+
+      const btn = document.getElementById('startBtn');
+      const badge = document.getElementById('engineStatusBadge');
+
+      if (isRunning) {
+        btn.classList.add('active');
+        document.getElementById('startBtnIcon').textContent = '⏹';
+        document.getElementById('startBtnText').textContent = '停止发动机';
+        badge.textContent = 'RUNNING';
+        badge.style.background = 'rgba(0, 255, 136, 0.15)';
+        badge.style.color = '#00ff88';
+
+        if (currentMode === 'granular') granularSynth.start();
+        else if (currentMode === 'ramp') rampPlayer.start();
+      } else {
+        btn.classList.remove('active');
+        document.getElementById('startBtnIcon').textContent = '▶';
+        document.getElementById('startBtnText').textContent = '启动发动机';
+        badge.textContent = 'STANDBY';
+        badge.style.background = 'rgba(0, 229, 255, 0.15)';
+        badge.style.color = 'var(--accent-cyan)';
+
+        granularSynth.stop();
+        rampPlayer.stop();
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      if (mode === 'granular') {
+        document.getElementById('modeGranularBtn').classList.add('active');
+        rampPlayer.stop();
+        if (isRunning) granularSynth.start();
+      } else if (mode === 'ramp') {
+        document.getElementById('modeRampBtn').classList.add('active');
+        granularSynth.stop();
+        if (isRunning) rampPlayer.start();
+      } else if (mode === 'inspector') {
+        document.getElementById('modeInspectBtn').classList.add('active');
+        granularSynth.stop();
+        rampPlayer.stop();
+      }
+    }
+
+    function toggleUpshiftSwitch() {
+      autoUpshiftEnabled = !autoUpshiftEnabled;
+      const btn = document.getElementById('btnAutoUpshift');
+      btn.className = `switch-btn ${autoUpshiftEnabled ? 'active' : 'inactive'}`;
+      document.getElementById('txtAutoUpshift').textContent = autoUpshiftEnabled ? 'ON' : 'OFF';
+    }
+
+    function toggleDownshiftSwitch() {
+      autoDownshiftEnabled = !autoDownshiftEnabled;
+      const btn = document.getElementById('btnAutoDownshift');
+      btn.className = `switch-btn ${autoDownshiftEnabled ? 'active' : 'inactive'}`;
+      document.getElementById('txtAutoDownshift').textContent = autoDownshiftEnabled ? 'ON' : 'OFF';
+    }
+
+    document.getElementById('pedalSlider').addEventListener('input', (e) => {
+      sliderPedalVal = parseFloat(e.target.value);
+    });
+
+    function updateSmoothTime(val) {
+      val = Math.max(1, parseInt(val) || 1);
+      gainSmoothingTimeMs = val;
+      document.getElementById('smoothTimeSlider').value = Math.min(50, val);
+      document.getElementById('smoothTimeInput').value = val;
+      document.getElementById('smoothTimeVal').textContent = `${val} ms (硬件级平滑滤波)`;
+    }
+    document.getElementById('smoothTimeSlider').addEventListener('input', (e) => updateSmoothTime(e.target.value));
+    document.getElementById('smoothTimeInput').addEventListener('input', (e) => updateSmoothTime(e.target.value));
+
+    function updateDropRate(val) {
+      val = Math.max(200, parseFloat(val) || 3000);
+      rpmDropRate = val;
+      document.getElementById('dropRateSlider').value = Math.min(8000, val);
+      document.getElementById('dropRateInput').value = Math.round(val);
+      document.getElementById('dropRateVal').textContent = `${Math.round(val)} RPM/s`;
+    }
+    document.getElementById('dropRateSlider').addEventListener('input', (e) => updateDropRate(e.target.value));
+    document.getElementById('dropRateInput').addEventListener('input', (e) => updateDropRate(e.target.value));
+
+    function updateAccelRate(val) {
+      val = Math.max(200, parseFloat(val) || 3500);
+      baseAccelRiseRate = val;
+      document.getElementById('accelRateSlider').value = Math.min(10000, val);
+      document.getElementById('accelRateInput').value = Math.round(val);
+      document.getElementById('accelRateVal').textContent = `${Math.round(val)} RPM/s`;
+    }
+    document.getElementById('accelRateSlider').addEventListener('input', (e) => updateAccelRate(e.target.value));
+    document.getElementById('accelRateInput').addEventListener('input', (e) => updateAccelRate(e.target.value));
+
+    document.getElementById('rpmSlider').addEventListener('input', (e) => {
+      targetRPM = parseFloat(e.target.value);
+      document.getElementById('rpmInput').value = Math.round(targetRPM);
+    });
+    document.getElementById('rpmInput').addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value) || 900;
+      targetRPM = val;
+      document.getElementById('rpmSlider').value = Math.min(6000, val);
+    });
+
+    document.getElementById('volSlider').addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value) / 100;
+      document.getElementById('volSliderVal').textContent = `${Math.round(val * 100)} %`;
+      if (masterGain) masterGain.gain.setValueAtTime(val, audioCtx.currentTime);
+    });
+
+    function onCurveChange() {
+      crossfadeCurveType = document.getElementById('curveSelect').value;
+    }
+    function onDecelModeChange() {
+      decelMode = document.getElementById('decelModeSelect').value;
+      if (isRunning && currentMode === 'granular') granularSynth.start();
+    }
+    function onDecorrChange() {
+      decorrelationDelayMs = parseInt(document.getElementById('decorrSelect').value);
+      granularSynth.updateDecorrNodes();
+      if (isRunning && currentMode === 'granular') granularSynth.start();
+    }
+
+    // ==========================================
+    // 新增真实车辆动力学与变速箱高级调校监听
+    // ==========================================
+    function updateRevCutoff(val) {
+      val = Math.max(4000, parseInt(val) || 5980);
+      revLimitCutoffRPM = val;
+      document.getElementById('revCutoffSlider').value = Math.min(6500, val);
+      document.getElementById('revCutoffInput').value = val;
+      document.getElementById('revCutoffVal').textContent = `${val} RPM`;
+      updateBounceDrop(revLimiterBounceDrop);
+    }
+    document.getElementById('revCutoffSlider').addEventListener('input', (e) => updateRevCutoff(e.target.value));
+    document.getElementById('revCutoffInput').addEventListener('input', (e) => updateRevCutoff(e.target.value));
+
+    function updateBounceDrop(val) {
+      val = Math.max(20, parseInt(val) || 300);
+      revLimiterBounceDrop = val;
+      document.getElementById('bounceDropSlider').value = Math.min(1500, val);
+      document.getElementById('bounceDropInput').value = val;
+      document.getElementById('bounceDropVal').textContent = `${val} RPM (回退至 ${Math.max(900, revLimitCutoffRPM - val)} RPM)`;
+    }
+    document.getElementById('bounceDropSlider').addEventListener('input', (e) => updateBounceDrop(e.target.value));
+    document.getElementById('bounceDropInput').addEventListener('input', (e) => updateBounceDrop(e.target.value));
+
+    function updateBounceDuty(val) {
+      val = Math.max(0.01, parseFloat(val) || 0.08);
+      revLimiterBounceDuration = val;
+      document.getElementById('bounceDutySlider').value = Math.min(0.30, val);
+      document.getElementById('bounceDutyInput').value = val.toFixed(2);
+      const desc = val <= 0.05 ? '超高频硬切' : (val <= 0.10 ? '高频硬切 Hard-Cut' : '柔和慢速软断油');
+      document.getElementById('bounceDutyVal').textContent = `${val.toFixed(2)} s (${desc})`;
+    }
+    document.getElementById('bounceDutySlider').addEventListener('input', (e) => updateBounceDuty(e.target.value));
+    document.getElementById('bounceDutyInput').addEventListener('input', (e) => updateBounceDuty(e.target.value));
+
+    function updateUpshiftDrop(val) {
+      val = Math.max(1000, parseInt(val) || 3300);
+      upshiftLandingRPM = val;
+      document.getElementById('upshiftDropSlider').value = Math.min(5000, val);
+      document.getElementById('upshiftDropInput').value = val;
+      document.getElementById('upshiftDropVal').textContent = `${val} RPM`;
+    }
+    document.getElementById('upshiftDropSlider').addEventListener('input', (e) => updateUpshiftDrop(e.target.value));
+    document.getElementById('upshiftDropInput').addEventListener('input', (e) => updateUpshiftDrop(e.target.value));
+
+    function onMaxGearsSelectChange() {
+      const sel = document.getElementById('maxGearsSelect').value;
+      if (sel !== 'custom') {
+        const val = parseInt(sel);
+        document.getElementById('maxGearsCustomInput').value = val;
+        onMaxGearsCustomChange(val);
+      }
+    }
+    function onMaxGearsCustomChange(val) {
+      val = Math.max(1, parseInt(val) || 10);
+      maxGears = val;
+      if (currentGear > maxGears) currentGear = maxGears;
+      const sel = document.getElementById('maxGearsSelect');
+      if (['5', '6', '10', '20', '99'].includes(val.toString())) {
+        sel.value = val.toString();
+      } else {
+        sel.value = 'custom';
+      }
+    }
+
+    document.getElementById('gearDecaySlider').addEventListener('input', (e) => {
+      gearDecayFactorBase = parseFloat(e.target.value) || 0.72;
+      document.getElementById('gearDecayVal').textContent = gearDecayFactorBase.toFixed(2);
+    });
+
+    document.getElementById('flywheelSlider').addEventListener('input', (e) => {
+      flywheelAgility = parseFloat(e.target.value) || 18.0;
+      document.getElementById('flywheelVal').textContent = flywheelAgility.toFixed(1);
+    });
+
+    document.getElementById('popRPMThresholdSlider').addEventListener('input', (e) => {
+      backfireTriggerRPM = parseInt(e.target.value) || 3500;
+      document.getElementById('popRPMThresholdVal').textContent = backfireTriggerRPM;
+    });
+
+    // 键盘监听 (W: 油门瞬时100%, S: 刹车瞬时100%, Shift/Z: 锁挡)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'w' || e.key === 'W') {
+        keyWDown = true;
+        document.getElementById('keyW').classList.add('pressed');
+        if (!isRunning) toggleEngine();
+      } else if (e.key === 's' || e.key === 'S') {
+        keySDown = true;
+        document.getElementById('keyS').classList.add('pressed');
+        if (!isRunning) toggleEngine();
+      } else if (e.key === 'Shift' || e.key === 'z' || e.key === 'Z') {
+        keyShiftDown = true;
+        document.getElementById('keyShift').classList.add('shift-pressed');
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'w' || e.key === 'W') {
+        keyWDown = false;
+        document.getElementById('keyW').classList.remove('pressed');
+      } else if (e.key === 's' || e.key === 'S') {
+        keySDown = false;
+        document.getElementById('keyS').classList.remove('pressed');
+      } else if (e.key === 'Shift' || e.key === 'z' || e.key === 'Z') {
+        keyShiftDown = false;
+        document.getElementById('keyShift').classList.remove('shift-pressed');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      buildSliceMonitorElements();
+      loadAllAudioDefault();
+      requestAnimationFrame(physicsLoop);
+    });
+  </script>
+</body>
+</html>
