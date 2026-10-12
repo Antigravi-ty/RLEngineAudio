@@ -1192,11 +1192,18 @@
         if (fileMap[onName]) { s.onBuffer = await loadAudioBuffer(fileMap[onName]); count++; }
         if (fileMap[offName]) { s.offBuffer = await loadAudioBuffer(fileMap[offName]); count++; }
       }
-      if (fileMap["accel_ramp_10s.wav"]) rampBuffer = await loadAudioBuffer(fileMap["accel_ramp_10s.wav"]);
-      if (fileMap["idle_loop_4.8s.wav"]) idleBuffer = await loadAudioBuffer(fileMap["idle_loop_4.8s.wav"]);
-      for (let i = 1; i <= 4; i++) {
-        const pName = `pop_0${i}.wav`;
-        if (fileMap[pName]) popBuffers[i - 1] = await loadAudioBuffer(fileMap[pName]);
+      // 动态匹配加速扫频与怠速循环
+      for (const name in fileMap) {
+        if (name.includes('accel_ramp')) rampBuffer = await loadAudioBuffer(fileMap[name]);
+        if (name.includes('idle_loop')) idleBuffer = await loadAudioBuffer(fileMap[name]);
+      }
+      // 动态载入所有放炮 SFX
+      const popKeys = Object.keys(fileMap).filter(k => k.startsWith('pop_')).sort();
+      if (popKeys.length > 0) {
+        popBuffers = [];
+        for (const k of popKeys) {
+          popBuffers.push(await loadAudioBuffer(fileMap[k]));
+        }
       }
 
       document.getElementById('corsNotice').classList.remove('active');
@@ -1359,8 +1366,12 @@
         const now = audioCtx.currentTime;
         const tau = Math.max(0.001, gainSmoothingTimeMs / 1000.0); // 采样级一阶平滑滤波器时间常数
 
-        // 目标声学基频：根据当前 RPM 连续线性映射 (48.0 Hz ~ 132.60 Hz)
-        const targetFreq = 48.0 + (132.60 - 48.0) * Math.max(0, Math.min(1, (currentRPM - 900) / (6000 - 900)));
+        // 目标声学基频：根据当前车型切片范围与当前 RPM 连续线性映射
+        const minFreq = SLICE_METAS[0] ? SLICE_METAS[0].freq : 48.0;
+        const maxFreq = SLICE_METAS[SLICE_METAS.length - 1] ? SLICE_METAS[SLICE_METAS.length - 1].freq : 132.6;
+        const minRPM = SLICE_METAS[0] ? SLICE_METAS[0].rpm : 900;
+        const maxRPM = SLICE_METAS[SLICE_METAS.length - 1] ? SLICE_METAS[SLICE_METAS.length - 1].rpm : 6000;
+        const targetFreq = minFreq + (maxFreq - minFreq) * Math.max(0, Math.min(1, (currentRPM - minRPM) / (maxRPM - minRPM)));
 
         // 3. 遍历常驻矩阵：只给当前相邻两个切片赋予目标增益，其余全部平滑衰减归 0！
         // 绝不创建新节点，绝不销毁节点，绝不调用 start()！

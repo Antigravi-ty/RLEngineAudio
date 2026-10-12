@@ -1,0 +1,345 @@
+{
+  "vehicle": "Hyundai Ioniq 6 (Rocket League SFX_REV_TurtleModem)",
+  "engine_type": "Synthesized Electric Modem Engine",
+  "sample_rate": 48000,
+  "freq_range": [
+    37.65,
+    74.65
+  ],
+  "rpm_range": [
+    900,
+    6000
+  ],
+  "slices": [
+    {
+      "index": 0,
+      "freq": 37.65,
+      "cycles": 22,
+      "samples": 28050,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_00_37.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_00_37.6hz_off.wav"
+    },
+    {
+      "index": 1,
+      "freq": 38.13,
+      "cycles": 22,
+      "samples": 27698,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_01_38.1hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_01_38.1hz_off.wav"
+    },
+    {
+      "index": 2,
+      "freq": 39.47,
+      "cycles": 23,
+      "samples": 27968,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_02_39.5hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_02_39.5hz_off.wav"
+    },
+    {
+      "index": 3,
+      "freq": 40.34,
+      "cycles": 24,
+      "samples": 28560,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_03_40.3hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_03_40.3hz_off.wav"
+    },
+    {
+      "index": 4,
+      "freq": 41.34,
+      "cycles": 24,
+      "samples": 27864,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_04_41.3hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_04_41.3hz_off.wav"
+    },
+    {
+      "index": 5,
+      "freq": 42.25,
+      "cycles": 25,
+      "samples": 28400,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_05_42.3hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_05_42.3hz_off.wav"
+    },
+    {
+      "index": 6,
+      "freq": 43.2,
+      "cycles": 25,
+      "samples": 27775,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_06_43.2hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_06_43.2hz_off.wav"
+    },
+    {
+      "index": 7,
+      "freq": 44.2,
+      "cycles": 26,
+      "samples": 28236,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_07_44.2hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_07_44.2hz_off.wav"
+    },
+    {
+      "index": 8,
+      "freq": 44.9,
+      "cycles": 26,
+      "samples": 27794,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_08_44.9hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_08_44.9hz_off.wav"
+    },
+    {
+      "index": 9,
+      "freq": 45.63,
+      "cycles": 27,
+      "samples": 28404,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_09_45.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_09_45.6hz_off.wav"
+    },
+    {
+      "index": 10,
+      "freq": 46.6,
+      "cycles": 27,
+      "samples": 27810,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_10_46.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_10_46.6hz_off.wav"
+    },
+    {
+      "index": 11,
+      "freq": 47.38,
+      "cycles": 28,
+      "samples": 28364,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_11_47.4hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_11_47.4hz_off.wav"
+    },
+    {
+      "index": 12,
+      "freq": 48.0,
+      "cycles": 28,
+      "samples": 28000,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_12_48.0hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_12_48.0hz_off.wav"
+    },
+    {
+      "index": 13,
+      "freq": 48.63,
+      "cycles": 29,
+      "samples": 28623,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_13_48.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_13_48.6hz_off.wav"
+    },
+    {
+      "index": 14,
+      "freq": 49.38,
+      "cycles": 29,
+      "samples": 28188,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_14_49.4hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_14_49.4hz_off.wav"
+    },
+    {
+      "index": 15,
+      "freq": 50.1,
+      "cycles": 30,
+      "samples": 28740,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_15_50.1hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_15_50.1hz_off.wav"
+    },
+    {
+      "index": 16,
+      "freq": 50.79,
+      "cycles": 30,
+      "samples": 28350,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_16_50.8hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_16_50.8hz_off.wav"
+    },
+    {
+      "index": 17,
+      "freq": 51.23,
+      "cycles": 30,
+      "samples": 28110,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_17_51.2hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_17_51.2hz_off.wav"
+    },
+    {
+      "index": 18,
+      "freq": 51.89,
+      "cycles": 31,
+      "samples": 28675,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_18_51.9hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_18_51.9hz_off.wav"
+    },
+    {
+      "index": 19,
+      "freq": 52.81,
+      "cycles": 31,
+      "samples": 28179,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_19_52.8hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_19_52.8hz_off.wav"
+    },
+    {
+      "index": 20,
+      "freq": 63.91,
+      "cycles": 38,
+      "samples": 28538,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_20_63.9hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_20_63.9hz_off.wav"
+    },
+    {
+      "index": 21,
+      "freq": 64.6,
+      "cycles": 38,
+      "samples": 28234,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_21_64.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_21_64.6hz_off.wav"
+    },
+    {
+      "index": 22,
+      "freq": 65.48,
+      "cycles": 39,
+      "samples": 28587,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_22_65.5hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_22_65.5hz_off.wav"
+    },
+    {
+      "index": 23,
+      "freq": 67.51,
+      "cycles": 40,
+      "samples": 28440,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_23_67.5hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_23_67.5hz_off.wav"
+    },
+    {
+      "index": 24,
+      "freq": 67.61,
+      "cycles": 40,
+      "samples": 28400,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_24_67.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_24_67.6hz_off.wav"
+    },
+    {
+      "index": 25,
+      "freq": 68.28,
+      "cycles": 40,
+      "samples": 28120,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_25_68.3hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_25_68.3hz_off.wav"
+    },
+    {
+      "index": 26,
+      "freq": 68.28,
+      "cycles": 40,
+      "samples": 28120,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_26_68.3hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_26_68.3hz_off.wav"
+    },
+    {
+      "index": 27,
+      "freq": 69.06,
+      "cycles": 41,
+      "samples": 28495,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_27_69.1hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_27_69.1hz_off.wav"
+    },
+    {
+      "index": 28,
+      "freq": 69.16,
+      "cycles": 41,
+      "samples": 28454,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_28_69.2hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_28_69.2hz_off.wav"
+    },
+    {
+      "index": 29,
+      "freq": 69.67,
+      "cycles": 41,
+      "samples": 28249,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_29_69.7hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_29_69.7hz_off.wav"
+    },
+    {
+      "index": 30,
+      "freq": 70.28,
+      "cycles": 42,
+      "samples": 28686,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_30_70.3hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_30_70.3hz_off.wav"
+    },
+    {
+      "index": 31,
+      "freq": 72.18,
+      "cycles": 43,
+      "samples": 28595,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_31_72.2hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_31_72.2hz_off.wav"
+    },
+    {
+      "index": 32,
+      "freq": 72.95,
+      "cycles": 43,
+      "samples": 28294,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_32_72.9hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_32_72.9hz_off.wav"
+    },
+    {
+      "index": 33,
+      "freq": 72.95,
+      "cycles": 43,
+      "samples": 28294,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_33_72.9hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_33_72.9hz_off.wav"
+    },
+    {
+      "index": 34,
+      "freq": 73.06,
+      "cycles": 43,
+      "samples": 28251,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_34_73.1hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_34_73.1hz_off.wav"
+    },
+    {
+      "index": 35,
+      "freq": 73.06,
+      "cycles": 43,
+      "samples": 28251,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_35_73.1hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_35_73.1hz_off.wav"
+    },
+    {
+      "index": 36,
+      "freq": 73.39,
+      "cycles": 44,
+      "samples": 28776,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_36_73.4hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_36_73.4hz_off.wav"
+    },
+    {
+      "index": 37,
+      "freq": 73.62,
+      "cycles": 44,
+      "samples": 28776,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_37_73.6hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_37_73.6hz_off.wav"
+    },
+    {
+      "index": 38,
+      "freq": 73.73,
+      "cycles": 44,
+      "samples": 28644,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_38_73.7hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_38_73.7hz_off.wav"
+    },
+    {
+      "index": 39,
+      "freq": 74.65,
+      "cycles": 44,
+      "samples": 28776,
+      "on_file": "audio_hyundai_ioniq_6/slices/slice_39_74.7hz.wav",
+      "off_file": "audio_hyundai_ioniq_6/slices/slice_39_74.7hz_off.wav"
+    }
+  ],
+  "full_ramp": "audio_hyundai_ioniq_6/full/accel_ramp_7.4s.wav",
+  "idle_loop": "audio_hyundai_ioniq_6/full/idle_loop_2.5s.wav",
+  "sfx_pops": [
+    "audio_hyundai_ioniq_6/sfx/pop_01.wav",
+    "audio_hyundai_ioniq_6/sfx/pop_02.wav",
+    "audio_hyundai_ioniq_6/sfx/pop_03.wav",
+    "audio_hyundai_ioniq_6/sfx/pop_04.wav",
+    "audio_hyundai_ioniq_6/sfx/pop_05.wav"
+  ],
+  "sfx_supersonic": "audio_hyundai_ioniq_6/sfx/supersonic_modem_loop.wav"
+}
