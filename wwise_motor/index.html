@@ -724,41 +724,71 @@
       }
     }
 
-    async function loadBuffer(url) {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const ab = await res.arrayBuffer();
-      return await audioCtx.decodeAudioData(ab);
+    async function safeDecode(urlOrFile) {
+      if (!audioCtx) initAudioContext();
+      try {
+        let ab;
+        if (urlOrFile instanceof File) {
+          ab = await urlOrFile.arrayBuffer();
+        } else {
+          const res = await fetch(urlOrFile);
+          if (!res.ok) return null;
+          ab = await res.arrayBuffer();
+        }
+        return await audioCtx.decodeAudioData(ab);
+      } catch (err) {
+        console.warn("解码单个音频跳过/警告:", (urlOrFile && urlOrFile.name) || urlOrFile, err.message);
+        return null;
+      }
     }
 
     async function loadDefaultAssets() {
       initAudioContext();
       try {
         // 1. 加载 Batmobile
-        AUDIO_BANK.batmobile.low_mid = await loadBuffer('audio_batmobile/loop_low_mid.wav');
-        AUDIO_BANK.batmobile.cruise_high = await loadBuffer('audio_batmobile/loop_cruise_high.wav');
-        AUDIO_BANK.batmobile.decel = await loadBuffer('audio_batmobile/decel_exhaust.wav');
-        AUDIO_BANK.batmobile.ignition = await loadBuffer('audio_batmobile/ignition_launch.wav').catch(()=>null);
+        AUDIO_BANK.batmobile.low_mid = await safeDecode('audio_batmobile/loop_low_mid.wav');
+        AUDIO_BANK.batmobile.cruise_high = await safeDecode('audio_batmobile/loop_cruise_high.wav');
+        AUDIO_BANK.batmobile.decel = await safeDecode('audio_batmobile/decel_exhaust.wav');
+        AUDIO_BANK.batmobile.ignition = await safeDecode('audio_batmobile/ignition_launch.wav');
 
-        // 2. 加载 Train Voice (按组加载)
-        const loadPromises = [];
+        // 2. 加载 Train Voice (确定性顺序加载)
+        AUDIO_BANK.train.strokes_a = [];
+        AUDIO_BANK.train.strokes_b = [];
+        AUDIO_BANK.train.strokes_c = [];
+        AUDIO_BANK.train.vents = [];
+        AUDIO_BANK.train.whistles = [];
+        AUDIO_BANK.train.pops = [];
+        AUDIO_BANK.train.loops = [];
+
         for (let i = 1; i <= 11; i++) {
           const idx = i < 10 ? '0' + i : i;
-          loadPromises.push(loadBuffer(`audio_train_voice/strokes_a/stroke_a_${idx}.wav`).then(b => AUDIO_BANK.train.strokes_a.push(b)).catch(()=>{}));
-          loadPromises.push(loadBuffer(`audio_train_voice/strokes_b/stroke_b_${idx}.wav`).then(b => AUDIO_BANK.train.strokes_b.push(b)).catch(()=>{}));
-          loadPromises.push(loadBuffer(`audio_train_voice/strokes_c/stroke_c_${idx}.wav`).then(b => AUDIO_BANK.train.strokes_c.push(b)).catch(()=>{}));
+          const [bA, bB, bC] = await Promise.all([
+            safeDecode(`audio_train_voice/strokes_a/stroke_a_${idx}.wav`),
+            safeDecode(`audio_train_voice/strokes_b/stroke_b_${idx}.wav`),
+            safeDecode(`audio_train_voice/strokes_c/stroke_c_${idx}.wav`)
+          ]);
+          if (bA) AUDIO_BANK.train.strokes_a.push(bA);
+          if (bB) AUDIO_BANK.train.strokes_b.push(bB);
+          if (bC) AUDIO_BANK.train.strokes_c.push(bC);
         }
+
         for (let i = 1; i <= 8; i++) {
           const idx = i < 10 ? '0' + i : i;
-          loadPromises.push(loadBuffer(`audio_train_voice/steam_vents/vent_${idx}.wav`).then(b => AUDIO_BANK.train.vents.push(b)).catch(()=>{}));
+          const b = await safeDecode(`audio_train_voice/steam_vents/vent_${idx}.wav`);
+          if (b) AUDIO_BANK.train.vents.push(b);
         }
+
         for (let i = 1; i <= 5; i++) {
           const idx = i < 10 ? '0' + i : i;
-          loadPromises.push(loadBuffer(`audio_train_voice/whistles/whistle_${idx}.wav`).then(b => AUDIO_BANK.train.whistles.push(b)).catch(()=>{}));
-          loadPromises.push(loadBuffer(`audio_train_voice/backfire_pops/pop_${idx}.wav`).then(b => AUDIO_BANK.train.pops.push(b)).catch(()=>{}));
-          loadPromises.push(loadBuffer(`audio_train_voice/loops/speed_loop_${idx}.wav`).then(b => AUDIO_BANK.train.loops.push(b)).catch(()=>{}));
+          const [bW, bP, bL] = await Promise.all([
+            safeDecode(`audio_train_voice/whistles/whistle_${idx}.wav`),
+            safeDecode(`audio_train_voice/backfire_pops/pop_${idx}.wav`),
+            safeDecode(`audio_train_voice/loops/speed_loop_${idx}.wav`)
+          ]);
+          if (bW) AUDIO_BANK.train.whistles.push(bW);
+          if (bP) AUDIO_BANK.train.pops.push(bP);
+          if (bL) AUDIO_BANK.train.loops.push(bL);
         }
-        await Promise.all(loadPromises);
 
         document.getElementById('engineStatusBadge').textContent = "READY";
         buildTrackMonitorUI();
@@ -767,7 +797,7 @@
       }
     }
 
-    // 文件夹上传载入
+    // 文件夹上传载入 (彻底修复非音频文件触发 Decoding failed 异常)
     document.getElementById('folderInput').addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
       if (!files.length) return;
@@ -776,18 +806,43 @@
       const fileMap = {};
       files.forEach(f => fileMap[f.name] = f);
 
+      document.getElementById('engineStatusBadge').textContent = "LOADING...";
+
+      // 1. 判断是蝙蝠车还是火车音效包
+      let isBatmobile = false;
+      let isTrain = false;
+
+      if (fileMap['metadata.json']) {
+        try {
+          const meta = JSON.parse(await fileMap['metadata.json'].text());
+          if (meta.stroke_groups || (meta.vehicle && meta.vehicle.toLowerCase().includes('train'))) {
+            isTrain = true;
+          } else if (meta.tracks || (meta.vehicle && meta.vehicle.toLowerCase().includes('darkcar'))) {
+            isBatmobile = true;
+          }
+        } catch(err) {
+          console.warn("metadata.json 预检:", err);
+        }
+      }
+
+      if (!isBatmobile && !isTrain) {
+        if (fileMap['loop_low_mid.wav'] || fileMap['loop_cruise_high.wav']) {
+          isBatmobile = true;
+        } else {
+          isTrain = true;
+        }
+      }
+
       let count = 0;
-      // 检查是否包含 batmobile 文件
-      if (fileMap['loop_low_mid.wav']) {
+      if (isBatmobile) {
         currentVehicle = 'batmobile';
-        AUDIO_BANK.batmobile.low_mid = await audioCtx.decodeAudioData(await fileMap['loop_low_mid.wav'].arrayBuffer());
-        AUDIO_BANK.batmobile.cruise_high = await audioCtx.decodeAudioData(await fileMap['loop_cruise_high.wav'].arrayBuffer());
-        AUDIO_BANK.batmobile.decel = await audioCtx.decodeAudioData(await fileMap['decel_exhaust.wav'].arrayBuffer());
-        if (fileMap['ignition_launch.wav']) AUDIO_BANK.batmobile.ignition = await audioCtx.decodeAudioData(await fileMap['ignition_launch.wav'].arrayBuffer());
-        count += 4;
+        if (fileMap['loop_low_mid.wav']) AUDIO_BANK.batmobile.low_mid = await safeDecode(fileMap['loop_low_mid.wav']);
+        if (fileMap['loop_cruise_high.wav']) AUDIO_BANK.batmobile.cruise_high = await safeDecode(fileMap['loop_cruise_high.wav']);
+        if (fileMap['decel_exhaust.wav']) AUDIO_BANK.batmobile.decel = await safeDecode(fileMap['decel_exhaust.wav']);
+        if (fileMap['ignition_launch.wav']) AUDIO_BANK.batmobile.ignition = await safeDecode(fileMap['ignition_launch.wav']);
+        count = [AUDIO_BANK.batmobile.low_mid, AUDIO_BANK.batmobile.cruise_high, AUDIO_BANK.batmobile.decel, AUDIO_BANK.batmobile.ignition].filter(Boolean).length;
         selectVehicle('batmobile');
       } else {
-        // 尝试加载为 train
         currentVehicle = 'train';
         AUDIO_BANK.train.strokes_a = [];
         AUDIO_BANK.train.strokes_b = [];
@@ -797,16 +852,22 @@
         AUDIO_BANK.train.pops = [];
         AUDIO_BANK.train.loops = [];
 
-        for (const name in fileMap) {
-          const ab = await fileMap[name].arrayBuffer();
-          const buf = await audioCtx.decodeAudioData(ab);
-          if (name.startsWith('stroke_a_')) AUDIO_BANK.train.strokes_a.push(buf);
-          else if (name.startsWith('stroke_b_')) AUDIO_BANK.train.strokes_b.push(buf);
-          else if (name.startsWith('stroke_c_')) AUDIO_BANK.train.strokes_c.push(buf);
-          else if (name.startsWith('vent_')) AUDIO_BANK.train.vents.push(buf);
-          else if (name.startsWith('whistle_')) AUDIO_BANK.train.whistles.push(buf);
-          else if (name.startsWith('pop_')) AUDIO_BANK.train.pops.push(buf);
-          else if (name.startsWith('speed_loop_')) AUDIO_BANK.train.loops.push(buf);
+        // 【关键修复】：严格过滤仅对 .wav 文件调用解码，彻底过滤 metadata.json、.DS_Store 等非音频文件
+        const wavNames = Object.keys(fileMap)
+          .filter(n => n.toLowerCase().endsWith('.wav'))
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+        for (const name of wavNames) {
+          const buf = await safeDecode(fileMap[name]);
+          if (!buf) continue;
+
+          if (name.includes('stroke_a_')) AUDIO_BANK.train.strokes_a.push(buf);
+          else if (name.includes('stroke_b_')) AUDIO_BANK.train.strokes_b.push(buf);
+          else if (name.includes('stroke_c_')) AUDIO_BANK.train.strokes_c.push(buf);
+          else if (name.includes('vent_')) AUDIO_BANK.train.vents.push(buf);
+          else if (name.includes('whistle_')) AUDIO_BANK.train.whistles.push(buf);
+          else if (name.includes('pop_')) AUDIO_BANK.train.pops.push(buf);
+          else if (name.includes('speed_loop_')) AUDIO_BANK.train.loops.push(buf);
           count++;
         }
         selectVehicle('train');
@@ -967,6 +1028,7 @@
       const now = audioCtx.currentTime;
       trainLoopSources = [];
       AUDIO_BANK.train.loops.forEach(buf => {
+        if (!buf) return;
         const s = audioCtx.createBufferSource();
         s.buffer = buf;
         s.loop = true;
@@ -1021,6 +1083,7 @@
 
       lastStrokeIndices[currentStrokeGroup] = idx;
       const buf = curGroupPool[idx];
+      if (!buf) return;
 
       const s = audioCtx.createBufferSource();
       s.buffer = buf;
