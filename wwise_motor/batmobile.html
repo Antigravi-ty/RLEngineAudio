@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rocket League · Batmobile 蝙蝠车引擎仿真控制台 (Wwise 多轨混合容器)</title>
+  <title>Rocket League · Batmobile 蝙蝠车引擎仿真控制台 (重映射调校版)</title>
   <style>
     :root {
       --bg-color: #0b0e14;
@@ -126,6 +126,22 @@
       background: rgba(255, 145, 0, 0.15);
       color: var(--accent-orange);
       border: 1px solid var(--accent-orange);
+    }
+
+    .falling-pop-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(179, 136, 255, 0.2);
+      border: 1px solid var(--accent-purple);
+      color: var(--accent-purple);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .falling-pop-tag.show {
+      opacity: 1;
     }
 
     .dashboard-center {
@@ -314,7 +330,6 @@
     .track-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, #ff9100, #ff1744);
       transition: width 0.05s linear;
     }
 
@@ -336,8 +351,8 @@
 <body>
 
   <header>
-    <h1>Rocket League · Batmobile DarkCar 引擎仿真控制台</h1>
-    <p>Audiokinetic Wwise 原生 CAkLayerCntr 双层混合容器 · RTPC 踏板与车速交叉淡化 · 起步点火 Launch Intro</p>
+    <h1>Rocket League · Batmobile DarkCar 仿真控制台</h1>
+    <p>重映射调校架构：怠速常驻 (Loop Cruise High) · 低转推进 (Decel Exhaust) · 高转轰鸣 (Loop Low Mid) · 油门下降沿截断 (Ignition Launch)</p>
   </header>
 
   <div class="nav-bar">
@@ -354,7 +369,7 @@
     <!-- 左侧：仪表与动力控制 -->
     <div class="panel">
       <h2>
-        蝙蝠车座舱仪表
+        座舱仪表 & 踏板
         <span class="badge" id="engineStatusBadge">STANDBY</span>
       </h2>
 
@@ -384,8 +399,8 @@
           <div class="stat-lbl">当前挡位</div>
         </div>
         <div class="stat-item">
-          <div class="stat-val" id="layerText">Layer 1 滑行</div>
-          <div class="stat-lbl">Wwise 容器层</div>
+          <div class="stat-val" id="stateText">怠速常驻</div>
+          <div class="stat-lbl">声浪工况</div>
         </div>
       </div>
 
@@ -404,11 +419,11 @@
           <div class="pedal-slider-labels">
             <span>-100% 刹车制动</span>
             <span>0% 怠速滑行</span>
-            <span>+100% 喷气加速</span>
+            <span>+100% 喷气给油</span>
           </div>
         </div>
         <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;">
-          💡 支持键盘快捷键：按住 <b>W 键</b>地板油加速；按住 <b>S 键</b>刹车；松开恢复怠速滑行。
+          💡 支持快捷键：按住 <b>W 键</b>全油门加速；<b>松开 W 键瞬间</b>即可听到下降沿截断音；按住 <b>S 键</b>刹车。
         </div>
       </div>
     </div>
@@ -416,67 +431,71 @@
     <!-- 右侧：Wwise 混合容器轨实时电平与机制解析 -->
     <div class="panel">
       <h2>
-        Wwise CAkLayerCntr 容器多轨混合器
-        <span class="badge" style="border-color:#b388ff; color:#b388ff;">4 独立音轨</span>
+        声轨动态混合电平
+        <span class="falling-pop-tag" id="fallingPopTag">⚡ 油门下降沿截断爆鸣！</span>
       </h2>
 
       <div class="track-list">
+        <!-- 轨 1: 怠速音效 (loop_cruise_high) -->
         <div class="track-item">
           <div class="track-header">
-            <span>🔹 低速基础循环轨 (loop_low_mid.wav)</span>
-            <span id="track_low_val" style="color:var(--accent-cyan); font-family:monospace;">0%</span>
+            <span>🟢 怠速基础循环 (loop_cruise_high.wav)</span>
+            <span id="track_idle_val" style="color:var(--accent-green); font-family:monospace;">100%</span>
           </div>
           <div class="track-meter">
-            <div class="track-fill" id="track_low_fill" style="background:#00e5ff;"></div>
+            <div class="track-fill" id="track_idle_fill" style="background:#00ff88; width:100%;"></div>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-            WEM 457205150 · 怠速底噪与低速巡航 (双层共享轨)
+            【重映射角色】：怠速/停定时的基础常驻循环，踩油门加速时平滑淡出
           </div>
         </div>
 
+        <!-- 轨 2: 低转速循环 (decel_exhaust) -->
         <div class="track-item">
           <div class="track-header">
-            <span>🔥 高速喷气加速轨 (loop_cruise_high.wav)</span>
-            <span id="track_high_val" style="color:var(--accent-orange); font-family:monospace;">0%</span>
+            <span>🟡 低转速推进轨 (decel_exhaust.wav)</span>
+            <span id="track_low_val" style="color:var(--accent-orange); font-family:monospace;">0%</span>
           </div>
           <div class="track-meter">
-            <div class="track-fill" id="track_high_fill" style="background:#ff9100;"></div>
+            <div class="track-fill" id="track_low_fill" style="background:#ff9100;"></div>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-            WEM 199011963 · Layer 0 专属 · 踩油门 (Throttle > 0.5) 且车速提高时全开
+            【重映射角色】：起步给油与低转速推进（1200 ~ 3200 RPM）主力声浪
           </div>
         </div>
 
+        <!-- 轨 3: 高转速轰鸣 (loop_low_mid) -->
         <div class="track-item">
           <div class="track-header">
-            <span>💨 减速气流排气轨 (decel_exhaust.wav)</span>
-            <span id="track_decel_val" style="color:var(--accent-red); font-family:monospace;">0%</span>
+            <span>🔴 高转速轰鸣轨 (loop_low_mid.wav)</span>
+            <span id="track_high_val" style="color:var(--accent-red); font-family:monospace;">0%</span>
           </div>
           <div class="track-meter">
-            <div class="track-fill" id="track_decel_fill" style="background:#ff1744;"></div>
+            <div class="track-fill" id="track_high_fill" style="background:#ff1744;"></div>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-            WEM 639862118 · Layer 1 专属 · 松油门 (Throttle < 0.5) 高速滑行排气呼啸
+            【重映射角色】：高转速与极速喷气巡航（3000 ~ 6000 RPM）主力声浪
           </div>
         </div>
 
+        <!-- 轨 4: 油门下降沿截断音 (ignition_launch) -->
         <div class="track-item">
           <div class="track-header">
-            <span>⚡ 起步喷气点火 (ignition_launch.wav)</span>
-            <span id="track_ign_val" style="color:#b388ff; font-family:monospace;">待机</span>
+            <span>⚡ 松油门下降沿截断 (ignition_launch.wav)</span>
+            <span id="track_sfx_val" style="color:var(--accent-purple); font-family:monospace;">待机</span>
           </div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">
-            WEM 928841165 · Event 3824029166 触发 · 静止起步踩油门瞬间触发单次
+            【重映射角色】：油门从 positive 归零（Falling Edge 下降沿）瞬间触发单次爆鸣
           </div>
         </div>
       </div>
 
-      <h2>Wwise 容器底层控制逻辑</h2>
+      <h2>调校机制说明</h2>
       <div class="rtpc-info-box">
-        • <b>双层容器结构</b>：Wwise `CAkLayerCntr` (ID: 36820665) 包含 Layer 0 (给油态) 与 Layer 1 (松油门滑行态)。<br>
-        • <b>RTPC 986115703 (踏板负荷)</b>：油门在 0.485 ~ 0.515 区间进行 S 型曲线层间切换。<br>
-        • <b>RTPC 1176766538 (车速/转速)</b>：在低速到高速（归一化 0.029 ~ 0.20）区间平滑淡出低速轨、淡入高速轨。<br>
-        • <b>起步事件</b>：车速为 0 时踩下油门触发 `ignition_launch.wav` 点火爆燃。
+        • <b>怠速状态 (RPM &le; 1000, Throttle = 0)</b>：`loop_cruise_high.wav` 满增益播放，其余循环静音。<br>
+        • <b>给油起步阶段</b>：`loop_cruise_high.wav` 迅速淡出，`decel_exhaust.wav` 作为低转速主力轨线性淡入。<br>
+        • <b>高转速拉升阶段</b>：转速越过 2800 RPM 后，声浪重心由 `decel_exhaust.wav` 平滑交接至 `loop_low_mid.wav` 并伴随音高提升。<br>
+        • <b>油门下降沿触发</b>：只要此前有给油（Throttle > 0），在松开油门的瞬间立即触发单次 `ignition_launch.wav` 截断收油声。
       </div>
 
     </div>
@@ -505,22 +524,22 @@
     let keyWDown = false;
     let keySDown = false;
 
-    // 音频缓冲
+    // 音频缓冲 (重映射角色)
     const AUDIO_BANK = {
-      low_mid: null,
-      cruise_high: null,
-      decel: null,
-      ignition: null
+      idle_loop: null,    // loop_cruise_high.wav (怠速音效)
+      low_rpm: null,      // decel_exhaust.wav (低转速循环)
+      high_rpm: null,     // loop_low_mid.wav (高转速循环)
+      falling_sfx: null   // ignition_launch.wav (油门下降沿单次音效)
     };
 
     // 运行中的声源节点
     const batSources = {
-      low_mid: null,
-      low_mid_gain: null,
-      cruise_high: null,
-      cruise_high_gain: null,
-      decel: null,
-      decel_gain: null
+      idle: null,
+      idle_gain: null,
+      low: null,
+      low_gain: null,
+      high: null,
+      high_gain: null
     };
 
     // ==========================================
@@ -561,10 +580,10 @@
     async function loadDefaultAssets() {
       initAudioContext();
       try {
-        AUDIO_BANK.low_mid = await safeDecode('audio_batmobile/loop_low_mid.wav');
-        AUDIO_BANK.cruise_high = await safeDecode('audio_batmobile/loop_cruise_high.wav');
-        AUDIO_BANK.decel = await safeDecode('audio_batmobile/decel_exhaust.wav');
-        AUDIO_BANK.ignition = await safeDecode('audio_batmobile/ignition_launch.wav');
+        AUDIO_BANK.idle_loop = await safeDecode('audio_batmobile/loop_cruise_high.wav');
+        AUDIO_BANK.low_rpm = await safeDecode('audio_batmobile/decel_exhaust.wav');
+        AUDIO_BANK.high_rpm = await safeDecode('audio_batmobile/loop_low_mid.wav');
+        AUDIO_BANK.falling_sfx = await safeDecode('audio_batmobile/ignition_launch.wav');
 
         document.getElementById('engineStatusBadge').textContent = "READY";
       } catch (err) {
@@ -582,13 +601,13 @@
 
       document.getElementById('engineStatusBadge').textContent = "LOADING...";
 
-      if (fileMap['loop_low_mid.wav']) AUDIO_BANK.low_mid = await safeDecode(fileMap['loop_low_mid.wav']);
-      if (fileMap['loop_cruise_high.wav']) AUDIO_BANK.cruise_high = await safeDecode(fileMap['loop_cruise_high.wav']);
-      if (fileMap['decel_exhaust.wav']) AUDIO_BANK.decel = await safeDecode(fileMap['decel_exhaust.wav']);
-      if (fileMap['ignition_launch.wav']) AUDIO_BANK.ignition = await safeDecode(fileMap['ignition_launch.wav']);
+      if (fileMap['loop_cruise_high.wav']) AUDIO_BANK.idle_loop = await safeDecode(fileMap['loop_cruise_high.wav']);
+      if (fileMap['decel_exhaust.wav']) AUDIO_BANK.low_rpm = await safeDecode(fileMap['decel_exhaust.wav']);
+      if (fileMap['loop_low_mid.wav']) AUDIO_BANK.high_rpm = await safeDecode(fileMap['loop_low_mid.wav']);
+      if (fileMap['ignition_launch.wav']) AUDIO_BANK.falling_sfx = await safeDecode(fileMap['ignition_launch.wav']);
 
       document.getElementById('engineStatusBadge').textContent = "READY";
-      alert('已成功解析并载入 Batmobile 蝙蝠车原声音效！');
+      alert('已成功解析并载入 Batmobile 蝙蝠车原声音效 (重映射版)！');
     });
 
     // ==========================================
@@ -611,48 +630,43 @@
       stopBatmobileEngine();
       const now = audioCtx.currentTime;
 
-      // 起步点火
-      if (AUDIO_BANK.ignition) {
-        playOneShot(AUDIO_BANK.ignition, 1.0);
-      }
-
-      // 常驻轨 1: 低中速循环 (loop_low_mid)
-      if (AUDIO_BANK.low_mid) {
+      // 轨 1: 怠速基础循环 (loop_cruise_high)
+      if (AUDIO_BANK.idle_loop) {
         const s1 = audioCtx.createBufferSource();
-        s1.buffer = AUDIO_BANK.low_mid;
+        s1.buffer = AUDIO_BANK.idle_loop;
         s1.loop = true;
         const g1 = audioCtx.createGain();
         g1.gain.setValueAtTime(1.0, now);
         s1.connect(g1).connect(masterGain);
         s1.start(0);
-        batSources.low_mid = s1;
-        batSources.low_mid_gain = g1;
+        batSources.idle = s1;
+        batSources.idle_gain = g1;
       }
 
-      // 常驻轨 2: 高速喷气轰鸣 (loop_cruise_high)
-      if (AUDIO_BANK.cruise_high) {
+      // 轨 2: 低转速循环 (decel_exhaust)
+      if (AUDIO_BANK.low_rpm) {
         const s2 = audioCtx.createBufferSource();
-        s2.buffer = AUDIO_BANK.cruise_high;
+        s2.buffer = AUDIO_BANK.low_rpm;
         s2.loop = true;
         const g2 = audioCtx.createGain();
         g2.gain.setValueAtTime(0.0, now);
         s2.connect(g2).connect(masterGain);
         s2.start(0);
-        batSources.cruise_high = s2;
-        batSources.cruise_high_gain = g2;
+        batSources.low = s2;
+        batSources.low_gain = g2;
       }
 
-      // 常驻轨 3: 减速排气气流 (decel_exhaust)
-      if (AUDIO_BANK.decel) {
+      // 轨 3: 高转速轰鸣 (loop_low_mid)
+      if (AUDIO_BANK.high_rpm) {
         const s3 = audioCtx.createBufferSource();
-        s3.buffer = AUDIO_BANK.decel;
+        s3.buffer = AUDIO_BANK.high_rpm;
         s3.loop = true;
         const g3 = audioCtx.createGain();
         g3.gain.setValueAtTime(0.0, now);
         s3.connect(g3).connect(masterGain);
         s3.start(0);
-        batSources.decel = s3;
-        batSources.decel_gain = g3;
+        batSources.high = s3;
+        batSources.high_gain = g3;
       }
     }
 
@@ -668,11 +682,12 @@
     }
 
     function stopBatmobileEngine() {
-      for (const k in batSources) {
-        if (batSources[k] && batSources[k].stop) {
+      for (const k of ['idle', 'low', 'high']) {
+        if (batSources[k]) {
           try { batSources[k].stop(); } catch(e){}
         }
         batSources[k] = null;
+        batSources[k + '_gain'] = null;
       }
     }
 
@@ -687,7 +702,7 @@
     }
 
     // ==========================================
-    // 4. 动力学与 Wwise 混合容器更新
+    // 4. 动力学与重映射混合更新
     // ==========================================
     let lastTime = performance.now();
 
@@ -703,16 +718,9 @@
         throttleLoad = Math.max(0, effectivePedal / 100);
         brakeForce = Math.max(0, -effectivePedal / 100);
 
-        // 静止踩油门瞬间触发一次起步点火
-        if (lastThrottleLoad === 0 && throttleLoad > 0 && carSpeed < 5) {
-          if (AUDIO_BANK.ignition) playOneShot(AUDIO_BANK.ignition, 1.0);
-          const ignEl = document.getElementById('track_ign_val');
-          ignEl.textContent = '触发起步';
-          ignEl.style.color = '#ff1744';
-          setTimeout(() => {
-            ignEl.textContent = '待机';
-            ignEl.style.color = '#b388ff';
-          }, 800);
+        // 【核心机制】：油门从 positive 变成零 (下降沿 Falling Edge) 触发 ignition_launch
+        if (lastThrottleLoad > 0.05 && throttleLoad <= 0.05) {
+          triggerFallingEdgePop();
         }
         lastThrottleLoad = throttleLoad;
 
@@ -734,57 +742,86 @@
 
         engineRPM += (targetRPM - engineRPM) * Math.min(1.0, dt * 14.0);
 
-        updateBatmobileAudio(engineRPM, carSpeed, throttleLoad);
+        updateBatmobileRemappedAudio(engineRPM, carSpeed, throttleLoad);
         updateUI(effectivePedal);
       }
 
       requestAnimationFrame(physicsLoop);
     }
 
-    // 基于 Wwise HIRC 曲线的交叉淡化算法
-    function updateBatmobileAudio(rpm, speed, throttle) {
-      if (!batSources.low_mid_gain) return;
+    function triggerFallingEdgePop() {
+      if (AUDIO_BANK.falling_sfx) {
+        playOneShot(AUDIO_BANK.falling_sfx, 1.1);
+      }
+      const tag = document.getElementById('fallingPopTag');
+      tag.classList.add('show');
+      setTimeout(() => tag.classList.remove('show'), 600);
+
+      const sfxEl = document.getElementById('track_sfx_val');
+      sfxEl.textContent = '⚡ 下降沿触发';
+      sfxEl.style.color = '#ff1744';
+      setTimeout(() => {
+        sfxEl.textContent = '待机';
+        sfxEl.style.color = 'var(--accent-purple)';
+      }, 900);
+    }
+
+    // 重映射混音算法：
+    // - 怠速：loop_cruise_high.wav
+    // - 低转速：decel_exhaust.wav
+    // - 高转速：loop_low_mid.wav
+    function updateBatmobileRemappedAudio(rpm, speed, throttle) {
+      if (!batSources.idle_gain) return;
       const now = audioCtx.currentTime;
 
-      // 1. RTPC 986115703 (踏板负荷): 决定 Layer 0 (On-Throttle) 还是 Layer 1 (Off-Throttle)
-      const isOnThrottle = throttle >= 0.15;
-      document.getElementById('layerText').textContent = isOnThrottle ? 'Layer 0 给油' : 'Layer 1 滑行';
+      // 归一化转速与车速
+      const rpmNorm = Math.max(0, Math.min(1, (rpm - 900) / 4900)); // 0 (900RPM) ~ 1 (5800RPM)
+      const isIdle = (throttle <= 0.02 && speed < 3.0 && rpm <= 1100);
 
-      // 2. RTPC 1176766538 (车速/转速混合因子):
-      // 低速段以 low_mid 为基底；随车速提升，淡入 cruise_high (给油) 或 decel_exhaust (滑行)
-      const speedFactor = Math.min(1.0, speed / 110);
-
+      let wIdle = 0;
       let wLow = 0;
       let wHigh = 0;
-      let wDecel = 0;
 
-      if (isOnThrottle) {
-        // 给油层 (Layer 0)
-        wLow = Math.max(0.15, 1.0 - speedFactor * 0.85) * (0.5 + throttle * 0.5);
-        wHigh = Math.pow(speedFactor, 1.2) * (0.6 + throttle * 0.4);
-        wDecel = 0.0;
-      } else {
-        // 松油门滑行/减速层 (Layer 1)
-        wLow = Math.max(0.4, 1.0 - speedFactor * 0.5);
+      if (isIdle) {
+        wIdle = 1.0;
+        wLow = 0.0;
         wHigh = 0.0;
-        // decel_exhaust 在高车速丢油门时声浪喷涌
-        wDecel = Math.pow(speedFactor, 1.1) * (0.4 + (rpm / 6000) * 0.6);
+        document.getElementById('stateText').textContent = '怠速常驻';
+      } else {
+        // 脱离怠速：idle 迅速衰减
+        wIdle = Math.max(0, 1.0 - rpmNorm * 4.0) * (1.0 - throttle);
+
+        // 低转速区间 (rpmNorm 0.0 ~ 0.55 对应 900 ~ 3600 RPM)
+        if (rpmNorm < 0.50) {
+          wLow = Math.min(1.0, rpmNorm * 2.5);
+          wHigh = Math.max(0, (rpmNorm - 0.25) * 4.0);
+          document.getElementById('stateText').textContent = '低转速推进';
+        } else {
+          // 高转速区间 (rpmNorm 0.50 ~ 1.0 对应 3600 ~ 5800 RPM)
+          wLow = Math.max(0, 1.0 - (rpmNorm - 0.50) * 2.2);
+          wHigh = 1.0;
+          document.getElementById('stateText').textContent = '高转速轰鸣';
+        }
+
+        // 踏板深度对整体响度进行轻微提升
+        const driveVol = 0.5 + throttle * 0.5;
+        wLow *= driveVol;
+        wHigh *= driveVol;
       }
 
-      batSources.low_mid_gain.gain.setTargetAtTime(wLow, now, 0.04);
-      if (batSources.cruise_high_gain) batSources.cruise_high_gain.gain.setTargetAtTime(wHigh, now, 0.04);
-      if (batSources.decel_gain) batSources.decel_gain.gain.setTargetAtTime(wDecel, now, 0.04);
+      batSources.idle_gain.gain.setTargetAtTime(wIdle, now, 0.04);
+      if (batSources.low_gain) batSources.low_gain.gain.setTargetAtTime(wLow, now, 0.04);
+      if (batSources.high_gain) batSources.high_gain.gain.setTargetAtTime(wHigh, now, 0.04);
 
-      // 微变调补偿 (0.88x ~ 1.25x)
-      const pitchRate = 0.88 + (rpm / 6000) * 0.36;
-      if (batSources.low_mid) batSources.low_mid.playbackRate.setValueAtTime(pitchRate, now);
-      if (batSources.cruise_high) batSources.cruise_high.playbackRate.setValueAtTime(pitchRate * 0.98, now);
-      if (batSources.decel) batSources.decel.playbackRate.setValueAtTime(pitchRate * 0.92, now);
+      // 微变调补偿 (怠速 0.95x ~ 极速 1.30x)
+      const pitchRate = 0.95 + rpmNorm * 0.35;
+      if (batSources.idle) batSources.idle.playbackRate.setValueAtTime(0.98, now);
+      if (batSources.low) batSources.low.playbackRate.setValueAtTime(pitchRate * 0.96, now);
+      if (batSources.high) batSources.high.playbackRate.setValueAtTime(pitchRate, now);
 
-      // 更新电平表
+      updateMeter('track_idle', wIdle);
       updateMeter('track_low', wLow);
       updateMeter('track_high', wHigh);
-      updateMeter('track_decel', wDecel);
     }
 
     function updateMeter(id, val) {
@@ -808,7 +845,7 @@
 
       const pText = document.getElementById('pedalStatusText');
       if (pedal > 0) {
-        pText.textContent = `+${Math.round(pedal)}% (喷气加速)`;
+        pText.textContent = `+${Math.round(pedal)}% (给油加速)`;
         pText.style.color = 'var(--accent-orange)';
       } else if (pedal < 0) {
         pText.textContent = `${Math.round(pedal)}% (刹车制动)`;

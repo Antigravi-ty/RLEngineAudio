@@ -1,28 +1,23 @@
 {
   "vehicle": "Batmobile DarkCar (Rocket League SFX_Motor_DarkCar)",
-  "engine_type": "Wwise Multi-Layer Jet Blend Container",
+  "engine_type": "Wwise Multi-Layer Jet Blend Container (Remapped)",
   "sample_rate": 48000,
-  "tracks": {
-    "ignition": "ignition_launch.wav",
-    "on_load_low": {
-      "file": "loop_low_mid.wav",
-      "rpm_range": [
-        900,
-        3200
-      ],
-      "peak_rpm": 1800
-    },
-    "cruise_high": {
+  "remapped_roles": {
+    "idle_loop": {
       "file": "loop_cruise_high.wav",
-      "rpm_range": [
-        2200,
-        6000
-      ],
-      "peak_rpm": 4500
+      "description": "怠速/静止工况常驻音效 (Idle Baseline Loop)"
     },
-    "off_load_decel": {
+    "low_rpm_loop": {
       "file": "decel_exhaust.wav",
-      "trigger": "throttle_off"
+      "description": "低转速推进主力循环轨 (Low RPM Propulsion Loop: 1200~3200 RPM)"
+    },
+    "high_rpm_loop": {
+      "file": "loop_low_mid.wav",
+      "description": "高转速极速轰鸣主力循环轨 (High RPM Jet Roar Loop: 3000~6000 RPM)"
+    },
+    "falling_edge_sfx": {
+      "file": "ignition_launch.wav",
+      "description": "油门下降沿松油截断爆鸣 (Throttle Falling Edge Cutoff One-Shot)"
     }
   }
 }

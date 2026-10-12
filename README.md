@@ -15,6 +15,7 @@
 RLEngineAudio/
 ├── index.html                       # 根目录全局导航门户
 ├── README.md
+├── REVERSE_ENGINEERING_GUIDE.md    # 核心技术文档：逆向全景解析与声学建模实战指南
 ├── .gitignore
 │
 ├── crankcase_rev/                   # 【体系 1】Crankcase REV 颗粒循环仿真
